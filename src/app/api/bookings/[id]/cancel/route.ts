@@ -45,43 +45,41 @@ export async function POST(
       (booking.startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
     const shouldRefund = hoursUntilStart >= 24;
 
-    await db.transaction(async (tx) => {
-      await tx
-        .update(schema.bookings)
-        .set({
-          status: "cancelled",
-          cancelledAt: now,
-          cancelledBy: userId,
-          creditRefunded: shouldRefund,
-          updatedAt: now,
-        })
-        .where(eq(schema.bookings.id, id));
+    await db
+      .update(schema.bookings)
+      .set({
+        status: "cancelled",
+        cancelledAt: now,
+        cancelledBy: userId,
+        creditRefunded: shouldRefund,
+        updatedAt: now,
+      })
+      .where(eq(schema.bookings.id, id));
 
-      if (shouldRefund && booking.totalCreditCost > 0) {
-        const [user] = await tx
-          .select({ creditBalance: schema.users.creditBalance })
-          .from(schema.users)
-          .where(eq(schema.users.id, booking.userId));
+    if (shouldRefund && booking.totalCreditCost > 0) {
+      const [user] = await db
+        .select({ creditBalance: schema.users.creditBalance })
+        .from(schema.users)
+        .where(eq(schema.users.id, booking.userId));
 
-        const balanceBefore = user.creditBalance;
-        const balanceAfter = balanceBefore + booking.totalCreditCost;
+      const balanceBefore = user.creditBalance;
+      const balanceAfter = balanceBefore + booking.totalCreditCost;
 
-        await tx
-          .update(schema.users)
-          .set({ creditBalance: balanceAfter, updatedAt: now })
-          .where(eq(schema.users.id, booking.userId));
+      await db
+        .update(schema.users)
+        .set({ creditBalance: balanceAfter, updatedAt: now })
+        .where(eq(schema.users.id, booking.userId));
 
-        await tx.insert(schema.creditTransactions).values({
-          userId: booking.userId,
-          type: "refund",
-          amount: booking.totalCreditCost,
-          balanceBefore,
-          balanceAfter,
-          bookingId: id,
-          description: `คืนเครดิต ยกเลิกจอง ${booking.bookingRef}`,
-        });
-      }
-    });
+      await db.insert(schema.creditTransactions).values({
+        userId: booking.userId,
+        type: "refund",
+        amount: booking.totalCreditCost,
+        balanceBefore,
+        balanceAfter,
+        bookingId: id,
+        description: `คืนเครดิต ยกเลิกจอง ${booking.bookingRef}`,
+      });
+    }
 
     // LINE notification
     if (booking.user.lineUserId) {

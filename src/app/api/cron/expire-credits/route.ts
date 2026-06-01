@@ -30,30 +30,28 @@ export async function GET(req: Request) {
 
     let expiredCount = 0;
     for (const batch of expiredBatches) {
-      await db.transaction(async (tx) => {
-        const deduct = batch.remainingAmount;
-        const balanceBefore = batch.user.creditBalance;
-        const balanceAfter = Math.max(0, balanceBefore - deduct);
+      const deduct = batch.remainingAmount;
+      const balanceBefore = batch.user.creditBalance;
+      const balanceAfter = Math.max(0, balanceBefore - deduct);
 
-        await tx
-          .update(schema.users)
-          .set({ creditBalance: balanceAfter, updatedAt: now })
-          .where(eq(schema.users.id, batch.userId));
+      await db
+        .update(schema.users)
+        .set({ creditBalance: balanceAfter, updatedAt: now })
+        .where(eq(schema.users.id, batch.userId));
 
-        await tx.insert(schema.creditTransactions).values({
-          userId: batch.userId,
-          type: "expired",
-          amount: -deduct,
-          balanceBefore,
-          balanceAfter,
-          description: `เครดิตหมดอายุ ${deduct} เครดิต`,
-        });
-
-        await tx
-          .update(schema.creditBatches)
-          .set({ remainingAmount: 0 })
-          .where(eq(schema.creditBatches.id, batch.id));
+      await db.insert(schema.creditTransactions).values({
+        userId: batch.userId,
+        type: "expired",
+        amount: -deduct,
+        balanceBefore,
+        balanceAfter,
+        description: `เครดิตหมดอายุ ${deduct} เครดิต`,
       });
+
+      await db
+        .update(schema.creditBatches)
+        .set({ remainingAmount: 0 })
+        .where(eq(schema.creditBatches.id, batch.id));
 
       expiredCount++;
     }

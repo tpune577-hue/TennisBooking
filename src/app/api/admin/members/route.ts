@@ -76,29 +76,27 @@ export async function POST(req: Request) {
     const { userId, amount, description } = parsed.data;
     const db = getDb();
 
-    await db.transaction(async (tx) => {
-      const [user] = await tx
-        .select({ creditBalance: schema.users.creditBalance })
-        .from(schema.users)
-        .where(eq(schema.users.id, userId));
+    const [user] = await db
+      .select({ creditBalance: schema.users.creditBalance })
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
 
-      if (!user) throw new Error("USER_NOT_FOUND");
+    if (!user) throw new Error("USER_NOT_FOUND");
 
-      const balanceBefore = user.creditBalance;
-      const balanceAfter = Math.max(0, balanceBefore + amount);
+    const balanceBefore = user.creditBalance;
+    const balanceAfter = Math.max(0, balanceBefore + amount);
 
-      await tx.update(schema.users)
-        .set({ creditBalance: balanceAfter, updatedAt: new Date() })
-        .where(eq(schema.users.id, userId));
+    await db.update(schema.users)
+      .set({ creditBalance: balanceAfter, updatedAt: new Date() })
+      .where(eq(schema.users.id, userId));
 
-      await tx.insert(schema.creditTransactions).values({
-        userId,
-        type: "adjustment",
-        amount,
-        balanceBefore,
-        balanceAfter,
-        description,
-      });
+    await db.insert(schema.creditTransactions).values({
+      userId,
+      type: "adjustment",
+      amount,
+      balanceBefore,
+      balanceAfter,
+      description,
     });
 
     console.log(JSON.stringify({ level: "info", msg: "credit_adjusted", userId, amount, ms: Date.now() - start }));

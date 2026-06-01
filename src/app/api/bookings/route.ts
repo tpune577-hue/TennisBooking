@@ -93,140 +93,138 @@ export async function POST(req: Request) {
 
     const db = getDb();
 
-    const result = await db.transaction(async (tx) => {
-      // Check for conflicts
-      const conflicts = await tx
-        .select({ id: schema.bookings.id })
-        .from(schema.bookings)
-        .where(
-          and(
-            eq(schema.bookings.courtId, courtId),
-            ne(schema.bookings.status, "cancelled"),
-            lt(schema.bookings.startTime, endTime),
-            gt(schema.bookings.endTime, startTime),
-          )
-        );
+    // Check for conflicts
+    const conflicts = await db
+      .select({ id: schema.bookings.id })
+      .from(schema.bookings)
+      .where(
+        and(
+          eq(schema.bookings.courtId, courtId),
+          ne(schema.bookings.status, "cancelled"),
+          lt(schema.bookings.startTime, endTime),
+          gt(schema.bookings.endTime, startTime),
+        )
+      );
 
-      if (conflicts.length > 0) {
-        throw Object.assign(new Error("SLOT_TAKEN"), { code: "SLOT_TAKEN" });
-      }
+    if (conflicts.length > 0) {
+      throw Object.assign(new Error("SLOT_TAKEN"), { code: "SLOT_TAKEN" });
+    }
 
-      // Get court pricing
-      const court = await tx.query.courts.findFirst({
-        where: and(eq(schema.courts.id, courtId), eq(schema.courts.isActive, true)),
-        with: { pricing: true },
-      });
-
-      if (!court) throw Object.assign(new Error("COURT_NOT_FOUND"), { code: "COURT_NOT_FOUND" });
-
-      const pricing = court.pricing;
-      if (!pricing) throw Object.assign(new Error("PRICING_NOT_CONFIGURED"), { code: "PRICING_NOT_CONFIGURED" });
-
-      // Get user with tier for discount
-      const user = await tx.query.users.findFirst({
-        where: eq(schema.users.id, userId),
-        with: { tier: true },
-      });
-
-      if (!user) throw Object.assign(new Error("USER_NOT_FOUND"), { code: "USER_NOT_FOUND" });
-
-      const discountPercent = user.tier?.discountPercent ?? 0;
-      const maxHoursPerBooking = user.tier?.maxHoursPerBooking ?? 3;
-
-      if (durationHours > maxHoursPerBooking) {
-        throw Object.assign(new Error(`MAX_HOURS_EXCEEDED:${maxHoursPerBooking}`), { code: "MAX_HOURS_EXCEEDED" });
-      }
-
-      // Calculate court cost hour by hour
-      let courtCreditCost = 0;
-      for (let h = 0; h < durationHours; h++) {
-        const slotHour = startTime.getUTCHours() + h;
-        const peak = isPeakHour(slotHour, pricing.peakStartTime, pricing.peakEndTime);
-        const basePrice = peak ? pricing.peakPricePerHour : pricing.offPeakPricePerHour;
-        courtCreditCost += Math.floor(basePrice * (1 - discountPercent / 100));
-      }
-
-      // Coach cost
-      let coachCreditCost = 0;
-      let resolvedCoachId: string | null = coachId ?? null;
-
-      if (type === "court_with_coach" && resolvedCoachId) {
-        const coach = await tx.query.coachProfiles.findFirst({
-          where: and(
-            eq(schema.coachProfiles.id, resolvedCoachId),
-            eq(schema.coachProfiles.isAvailable, true),
-          ),
-        });
-        if (!coach) throw Object.assign(new Error("COACH_NOT_FOUND"), { code: "COACH_NOT_FOUND" });
-        coachCreditCost = coach.pricePerHour * durationHours;
-      } else if (type === "court_with_coach") {
-        throw Object.assign(new Error("COACH_REQUIRED"), { code: "COACH_REQUIRED" });
-      }
-
-      const totalCreditCost = courtCreditCost + coachCreditCost;
-
-      // Check user has enough credits
-      if (user.creditBalance < totalCreditCost) {
-        throw Object.assign(new Error("INSUFFICIENT_CREDITS"), { code: "INSUFFICIENT_CREDITS" });
-      }
-
-      // Generate booking reference
-      const dateStr = startTime.toISOString().slice(0, 10).replace(/-/g, "");
-      const [countRow] = await tx
-        .select({ count: sql<number>`count(*)::int` })
-        .from(schema.bookings)
-        .where(sql`booking_ref LIKE ${"BK-" + dateStr + "-%"}`);
-
-      const seq = (countRow?.count ?? 0) + 1;
-      const bookingRef = `BK-${dateStr}-${String(seq).padStart(3, "0")}`;
-
-      // Insert booking
-      const [booking] = await tx
-        .insert(schema.bookings)
-        .values({
-          bookingRef,
-          userId,
-          courtId,
-          coachId: resolvedCoachId,
-          type,
-          status: "confirmed",
-          startTime,
-          endTime,
-          durationHours,
-          courtCreditCost,
-          coachCreditCost,
-          totalCreditCost,
-        })
-        .returning();
-
-      // Deduct credits
-      const balanceBefore = user.creditBalance;
-      const balanceAfter = balanceBefore - totalCreditCost;
-
-      await tx
-        .update(schema.users)
-        .set({ creditBalance: balanceAfter, updatedAt: new Date() })
-        .where(eq(schema.users.id, userId));
-
-      // Credit transaction record
-      await tx.insert(schema.creditTransactions).values({
-        userId,
-        type: "booking",
-        amount: -totalCreditCost,
-        balanceBefore,
-        balanceAfter,
-        bookingId: booking.id,
-        description: `จองสนาม ${bookingRef}`,
-      });
-
-      // Fetch user lineUserId for notification
-      const userForNotif = await tx.query.users.findFirst({
-        where: eq(schema.users.id, userId),
-        columns: { lineUserId: true },
-      });
-
-      return { booking, balanceAfter, lineUserId: userForNotif?.lineUserId ?? null };
+    // Get court pricing
+    const court = await db.query.courts.findFirst({
+      where: and(eq(schema.courts.id, courtId), eq(schema.courts.isActive, true)),
+      with: { pricing: true },
     });
+
+    if (!court) throw Object.assign(new Error("COURT_NOT_FOUND"), { code: "COURT_NOT_FOUND" });
+
+    const pricing = court.pricing;
+    if (!pricing) throw Object.assign(new Error("PRICING_NOT_CONFIGURED"), { code: "PRICING_NOT_CONFIGURED" });
+
+    // Get user with tier for discount
+    const user = await db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      with: { tier: true },
+    });
+
+    if (!user) throw Object.assign(new Error("USER_NOT_FOUND"), { code: "USER_NOT_FOUND" });
+
+    const discountPercent = user.tier?.discountPercent ?? 0;
+    const maxHoursPerBooking = user.tier?.maxHoursPerBooking ?? 3;
+
+    if (durationHours > maxHoursPerBooking) {
+      throw Object.assign(new Error(`MAX_HOURS_EXCEEDED:${maxHoursPerBooking}`), { code: "MAX_HOURS_EXCEEDED" });
+    }
+
+    // Calculate court cost hour by hour
+    let courtCreditCost = 0;
+    for (let h = 0; h < durationHours; h++) {
+      const slotHour = startTime.getUTCHours() + h;
+      const peak = isPeakHour(slotHour, pricing.peakStartTime, pricing.peakEndTime);
+      const basePrice = peak ? pricing.peakPricePerHour : pricing.offPeakPricePerHour;
+      courtCreditCost += Math.floor(basePrice * (1 - discountPercent / 100));
+    }
+
+    // Coach cost
+    let coachCreditCost = 0;
+    let resolvedCoachId: string | null = coachId ?? null;
+
+    if (type === "court_with_coach" && resolvedCoachId) {
+      const coach = await db.query.coachProfiles.findFirst({
+        where: and(
+          eq(schema.coachProfiles.id, resolvedCoachId),
+          eq(schema.coachProfiles.isAvailable, true),
+        ),
+      });
+      if (!coach) throw Object.assign(new Error("COACH_NOT_FOUND"), { code: "COACH_NOT_FOUND" });
+      coachCreditCost = coach.pricePerHour * durationHours;
+    } else if (type === "court_with_coach") {
+      throw Object.assign(new Error("COACH_REQUIRED"), { code: "COACH_REQUIRED" });
+    }
+
+    const totalCreditCost = courtCreditCost + coachCreditCost;
+
+    // Check user has enough credits
+    if (user.creditBalance < totalCreditCost) {
+      throw Object.assign(new Error("INSUFFICIENT_CREDITS"), { code: "INSUFFICIENT_CREDITS" });
+    }
+
+    // Generate booking reference
+    const dateStr = startTime.toISOString().slice(0, 10).replace(/-/g, "");
+    const [countRow] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(schema.bookings)
+      .where(sql`booking_ref LIKE ${"BK-" + dateStr + "-%"}`);
+
+    const seq = (countRow?.count ?? 0) + 1;
+    const bookingRef = `BK-${dateStr}-${String(seq).padStart(3, "0")}`;
+
+    // Insert booking
+    const [booking] = await db
+      .insert(schema.bookings)
+      .values({
+        bookingRef,
+        userId,
+        courtId,
+        coachId: resolvedCoachId,
+        type,
+        status: "confirmed",
+        startTime,
+        endTime,
+        durationHours,
+        courtCreditCost,
+        coachCreditCost,
+        totalCreditCost,
+      })
+      .returning();
+
+    // Deduct credits
+    const balanceBefore = user.creditBalance;
+    const balanceAfter = balanceBefore - totalCreditCost;
+
+    await db
+      .update(schema.users)
+      .set({ creditBalance: balanceAfter, updatedAt: new Date() })
+      .where(eq(schema.users.id, userId));
+
+    // Credit transaction record
+    await db.insert(schema.creditTransactions).values({
+      userId,
+      type: "booking",
+      amount: -totalCreditCost,
+      balanceBefore,
+      balanceAfter,
+      bookingId: booking.id,
+      description: `จองสนาม ${bookingRef}`,
+    });
+
+    // Fetch user lineUserId for notification
+    const userForNotif = await db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: { lineUserId: true },
+    });
+
+    const result = { booking, balanceAfter, lineUserId: userForNotif?.lineUserId ?? null };
 
     // LINE notification (fire-and-forget)
     if (result.lineUserId) {
