@@ -1,5 +1,6 @@
 import { getDb, schema } from "@/db";
 import { eq } from "drizzle-orm";
+import { loadBookingGuests } from "@/lib/bookings/load-booking-guests";
 import {
   notifyBookingCancelled,
   notifyBookingCancelledGuest,
@@ -21,11 +22,6 @@ export async function cancelBooking(opts: {
     with: {
       court: { columns: { name: true } },
       user: { columns: { lineUserId: true, name: true } },
-      guests: {
-        with: {
-          user: { columns: { lineUserId: true, name: true } },
-        },
-      },
     },
   });
 
@@ -100,7 +96,9 @@ export async function cancelBooking(opts: {
     };
   }
 
-  for (const guest of booking.guests) {
+  const guests = await loadBookingGuests(opts.bookingId);
+
+  for (const guest of guests) {
     const lineUserId = guest.user.lineUserId;
     if (!lineUserId || notifiedGuests.has(lineUserId)) continue;
     if (lineUserId === booking.user.lineUserId) continue;
