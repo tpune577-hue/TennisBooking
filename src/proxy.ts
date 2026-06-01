@@ -43,7 +43,7 @@ async function middleware(
     return NextResponse.redirect(signInUrl);
   }
 
-  const role = ((req.auth.user as Record<string, unknown>).role as string) ?? "customer";
+  const role = ((req.auth.user as unknown as Record<string, unknown>).role as string) ?? "customer";
 
   // Super-admin-only routes
   if (SUPER_ADMIN_ONLY.some((p) => pathname.startsWith(p)) && role !== "super_admin") {
