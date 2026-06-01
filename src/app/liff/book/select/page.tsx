@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
+import { useCreditBalance } from "@/hooks/use-credit-balance";
 import { format, addDays, startOfDay } from "date-fns";
 import { th } from "date-fns/locale";
 import { ChevronLeft, Clock, Coins, Loader2, Zap } from "lucide-react";
@@ -67,8 +68,9 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 function SelectContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const { isReady: liffReady } = useLiff();
+  const { creditBalance } = useCreditBalance();
 
   const bookingType =
     (searchParams.get("type") as "court_only" | "court_with_coach") ??
@@ -225,9 +227,6 @@ function SelectContent() {
       </div>
     );
   }
-
-  const creditBalance =
-    (session?.user as unknown as { creditBalance?: number })?.creditBalance ?? 0;
 
   return (
     <>

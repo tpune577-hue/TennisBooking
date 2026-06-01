@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
+import { useCreditBalance } from "@/hooks/use-credit-balance";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import {
@@ -44,8 +45,9 @@ function InfoRow({
 function ConfirmContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { status } = useSession();
   const { isReady: liffReady } = useLiff();
+  const { creditBalance, loading: balanceLoading } = useCreditBalance();
   const [confirming, setConfirming] = useState(false);
 
   const type =
@@ -64,9 +66,7 @@ function ConfirmContent() {
 
   const totalCost = courtCost + coachCost;
   const durationHours = endHour - startHour;
-  const creditBalance =
-    (session?.user as unknown as { creditBalance?: number })?.creditBalance ?? 0;
-  const hasEnoughCredits = creditBalance >= totalCost;
+  const hasEnoughCredits = !balanceLoading && creditBalance >= totalCost;
   const remaining = creditBalance - totalCost;
 
   const dateDisplay = date
@@ -305,7 +305,7 @@ function ConfirmContent() {
         <Button
           className="w-full h-12 text-base font-semibold"
           onClick={handleConfirm}
-          disabled={!hasEnoughCredits || confirming}
+          disabled={balanceLoading || !hasEnoughCredits || confirming}
         >
           {confirming ? (
             <>

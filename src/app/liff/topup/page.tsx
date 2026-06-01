@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
+import { useCreditBalance } from "@/hooks/use-credit-balance";
 import { useLiff } from "@/lib/liff/provider";
 import {
   AlertCircle,
@@ -62,8 +63,9 @@ function fmtExpiry(v: string) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function LiffTopupPage() {
   const router = useRouter();
-  const { data: session, status, update: updateSession } = useSession();
+  const { status } = useSession();
   const { isReady: liffReady } = useLiff();
+  const { creditBalance, refresh: refreshCreditBalance } = useCreditBalance();
 
   const [screen, setScreen] = useState<Screen>("packages");
   const [selected, setSelected] = useState<number>(1); // default 1,000 THB
@@ -101,8 +103,6 @@ export default function LiffTopupPage() {
   }, []);
 
   const pkg = PACKAGES[selected];
-  const creditBalance =
-    (session?.user as unknown as { creditBalance?: number })?.creditBalance ?? 0;
 
   // ─── PromptPay flow ─────────────────────────────────────────────────────────
   async function startPromptPay() {
@@ -144,7 +144,7 @@ export default function LiffTopupPage() {
           const data = await res.json();
           if (data.status === "paid") {
             setAddedCredits(pkg.credits);
-            await updateSession();
+            await refreshCreditBalance();
             setScreen("success");
             setPolling(false);
             pollingRef.current = false;
@@ -163,7 +163,7 @@ export default function LiffTopupPage() {
       setPolling(false);
       setError("หมดเวลารอ กรุณาตรวจสอบยอดเครดิตในหน้า เครดิตของฉัน");
     },
-    [pkg.credits, updateSession]
+    [pkg.credits, refreshCreditBalance]
   );
 
   // ─── Credit card flow ───────────────────────────────────────────────────────
@@ -226,7 +226,7 @@ export default function LiffTopupPage() {
 
           if (data.status === "successful" || data.status === "paid") {
             setAddedCredits(pkg.credits);
-            await updateSession();
+            await refreshCreditBalance();
             setScreen("success");
           } else {
             setScreen("failed");
