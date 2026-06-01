@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/db";
 import { eq, ilike, or, desc } from "drizzle-orm";
 import { z } from "zod";
+import { notifyCreditAdjusted } from "@/lib/notifications/line";
 
 export const dynamic = "force-dynamic";
 
@@ -77,7 +78,10 @@ export async function POST(req: Request) {
     const db = getDb();
 
     const [user] = await db
-      .select({ creditBalance: schema.users.creditBalance })
+      .select({
+        creditBalance: schema.users.creditBalance,
+        lineUserId: schema.users.lineUserId,
+      })
       .from(schema.users)
       .where(eq(schema.users.id, userId));
 
@@ -98,6 +102,15 @@ export async function POST(req: Request) {
       balanceAfter,
       description,
     });
+
+    if (user.lineUserId) {
+      notifyCreditAdjusted({
+        lineUserId: user.lineUserId,
+        amount,
+        newBalance: balanceAfter,
+        note: description,
+      });
+    }
 
     console.log(JSON.stringify({ level: "info", msg: "credit_adjusted", userId, amount, ms: Date.now() - start }));
     return Response.json({ success: true });

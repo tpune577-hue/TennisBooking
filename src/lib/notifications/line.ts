@@ -73,3 +73,19 @@ export async function notifyCreditExpiringSoon(opts: {
     `⚠️ เครดิตใกล้หมดอายุ\n\n${opts.amount} เครดิต จะหมดอายุใน ${opts.daysLeft} วัน (${opts.expiresAt})\nกรุณาใช้ก่อนหมดอายุ`
   );
 }
+
+export async function notifyCreditAdjusted(opts: {
+  lineUserId: string;
+  amount: number;
+  newBalance: number;
+  note: string;
+}) {
+  const changeLabel =
+    opts.amount >= 0
+      ? `+${opts.amount.toLocaleString()}`
+      : opts.amount.toLocaleString();
+  await push(
+    opts.lineUserId,
+    `🔔 ปรับยอดเครดิต\n\nเปลี่ยนแปลง: ${changeLabel} เครดิต\nยอดคงเหลือ: ${opts.newBalance.toLocaleString()} เครดิต\n\nหมายเหตุ: ${opts.note}`
+  );
+}
