@@ -1,0 +1,8 @@
+{
+  "framework": "nextjs-app",
+  "files": ["src/app/layout.tsx"],
+  "insertBefore": "</body>",
+  "commentSyntax": "{/* */}",
+  "devServer": "http://localhost:3001",
+  "cspChecked": true
+}
