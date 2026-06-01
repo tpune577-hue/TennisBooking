@@ -102,47 +102,45 @@ export async function fulfillPayment(
   const expiresAt = new Date(now);
   expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-  await db.transaction(async (tx) => {
-    // Mark payment as paid
-    await tx
-      .update(schema.payments)
-      .set({ status: "paid", paidAt: now, updatedAt: now })
-      .where(eq(schema.payments.id, paymentId));
+  // Mark payment as paid
+  await db
+    .update(schema.payments)
+    .set({ status: "paid", paidAt: now, updatedAt: now })
+    .where(eq(schema.payments.id, paymentId));
 
-    // Get user balance
-    const [user] = await tx
-      .select({ creditBalance: schema.users.creditBalance })
-      .from(schema.users)
-      .where(eq(schema.users.id, userId));
+  // Get user balance
+  const [user] = await db
+    .select({ creditBalance: schema.users.creditBalance })
+    .from(schema.users)
+    .where(eq(schema.users.id, userId));
 
-    const balanceBefore = user.creditBalance;
-    const balanceAfter = balanceBefore + creditAmount;
+  const balanceBefore = user.creditBalance;
+  const balanceAfter = balanceBefore + creditAmount;
 
-    // Add credits
-    await tx
-      .update(schema.users)
-      .set({ creditBalance: balanceAfter, updatedAt: now })
-      .where(eq(schema.users.id, userId));
+  // Add credits
+  await db
+    .update(schema.users)
+    .set({ creditBalance: balanceAfter, updatedAt: now })
+    .where(eq(schema.users.id, userId));
 
-    // Credit transaction record
-    await tx.insert(schema.creditTransactions).values({
-      userId,
-      type: "topup",
-      amount: creditAmount,
-      balanceBefore,
-      balanceAfter,
-      paymentId,
-      expiresAt,
-      description: `เติมเครดิต ${creditAmount} เครดิต`,
-    });
+  // Credit transaction record
+  await db.insert(schema.creditTransactions).values({
+    userId,
+    type: "topup",
+    amount: creditAmount,
+    balanceBefore,
+    balanceAfter,
+    paymentId,
+    expiresAt,
+    description: `เติมเครดิต ${creditAmount} เครดิต`,
+  });
 
-    // Credit batch for expiry tracking
-    await tx.insert(schema.creditBatches).values({
-      userId,
-      originalAmount: creditAmount,
-      remainingAmount: creditAmount,
-      expiresAt,
-      paymentId,
-    });
+  // Credit batch for expiry tracking
+  await db.insert(schema.creditBatches).values({
+    userId,
+    originalAmount: creditAmount,
+    remainingAmount: creditAmount,
+    expiresAt,
+    paymentId,
   });
 }
