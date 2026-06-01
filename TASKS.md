@@ -29,7 +29,7 @@
 - **User Dashboard** — `/dashboard` (overview), `/dashboard/bookings` (list + cancel), `/dashboard/credits` (history), `/dashboard/topup` (Omise PromptPay + card)
 - **Credit Top-up** — `POST /api/payments`, `GET /api/payments/[id]/status`, `POST /api/payments/webhook`, webhook idempotency via `UPDATE WHERE status='pending' RETURNING`
 - **Admin panel** — `/admin` (stats), `/admin/members` (search + adjust credits), `/admin/bookings` (list + filter + cancel), `/admin/coaches` (CRUD), `/admin/courts` (CRUD + pricing)
-- **LINE Notifications** — plain text push for: booking confirmed, booking cancelled, topup success, credit expiring soon (`src/lib/notifications/line.ts`)
+- **LINE Notifications** — Flex Message bubbles for: booking confirmed, booking cancelled (member/owner/guest), topup success, credit expiring soon (with topup CTA); admin credit adjust stays plain text (`src/lib/notifications/line.ts`)
 - **Cron** — `GET /api/cron/expire-credits` runs daily at 02:00 UTC via `vercel.json`
 
 ---
@@ -49,43 +49,6 @@
 **Files to touch:**
 - `src/app/(admin)/admin/finance/page.tsx` — add chart section
 - `src/app/api/admin/finance/chart/route.ts` — new API route (admin-only)
-
----
-
-### Task G — LINE Notifications: upgrade to Flex Messages
-
-**Status:** working as plain text (`src/lib/notifications/line.ts`). All 4 notification types fire correctly. Needs visual upgrade.
-
-**What to build:**
-
-Replace the `push()` plain-text calls with Flex Message bubbles for each notification type. LINE Flex Messages are JSON payloads sent to `https://api.line.me/v2/bot/message/push` with `type: "flex"`.
-
-Notification types to upgrade (all in `src/lib/notifications/line.ts`):
-
-1. **`notifyBookingConfirmed`** — green header bubble, show: booking ref, court, date, time range, credit deducted
-2. **`notifyBookingCancelled`** — red/grey bubble, show: booking ref, court, refund status + amount
-3. **`notifyTopupSuccess`** — green bubble, show: credits added, new balance
-4. **`notifyCreditExpiringSoon`** — amber warning bubble, show: amount, days left, expiry date, CTA button "เติมเครดิต" linking to LIFF topup
-
-Flex Message docs: https://developers.line.biz/en/docs/messaging-api/flex-message-elements/
-
-**Files to touch:**
-- `src/lib/notifications/line.ts` — replace plain text with Flex Message JSON
-
-**Example structure for each message:**
-```ts
-body: JSON.stringify({
-  to: lineUserId,
-  messages: [{
-    type: "flex",
-    altText: "จองสนามสำเร็จ!",  // fallback text for notifications
-    contents: {
-      type: "bubble",
-      // ... flex message JSON
-    }
-  }]
-})
-```
 
 ---
 

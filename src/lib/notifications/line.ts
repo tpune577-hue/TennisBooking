@@ -53,7 +53,7 @@ function flexBody(rows: FlexComponent[]): FlexComponent {
   };
 }
 
-function flexFooterButton(label: string, uri: string): FlexComponent {
+function flexFooterButton(label: string, uri: string, color = COLORS.warning): FlexComponent {
   return {
     type: "box",
     layout: "vertical",
@@ -61,7 +61,7 @@ function flexFooterButton(label: string, uri: string): FlexComponent {
       {
         type: "button",
         style: "primary",
-        color: COLORS.warning,
+        color,
         action: { type: "uri", label, uri },
       },
     ],
@@ -69,12 +69,41 @@ function flexFooterButton(label: string, uri: string): FlexComponent {
   };
 }
 
-function liffTopupUri(): string {
+function appUri(path: string): string {
   const base = process.env.AUTH_URL?.replace(/\/$/, "");
-  if (base) return `${base}/liff/topup`;
+  if (base) return `${base}${path.startsWith("/") ? path : `/${path}`}`;
   const liffId = process.env.NEXT_PUBLIC_LIFF_ID;
   if (liffId) return `https://liff.line.me/${liffId}`;
-  return "/liff/topup";
+  return path;
+}
+
+function liffTopupUri(): string {
+  return appUri("/liff/topup");
+}
+
+/** Opens LIFF booking success with invite modal (host shares link from there). */
+export function liffBookingInviteUri(opts: {
+  bookingId: string;
+  bookingRef: string;
+  courtName: string;
+  date: string;
+  startHour: number;
+  endHour: number;
+  totalCost: number;
+  coachName?: string | null;
+}): string {
+  const p = new URLSearchParams({
+    bookingId: opts.bookingId,
+    ref: opts.bookingRef,
+    courtName: opts.courtName,
+    date: opts.date,
+    startHour: String(opts.startHour),
+    endHour: String(opts.endHour),
+    total: String(opts.totalCost),
+    invite: "1",
+  });
+  if (opts.coachName) p.set("coachName", opts.coachName);
+  return appUri(`/liff/booking-success?${p.toString()}`);
 }
 
 async function pushMessages(to: string, messages: unknown[]): Promise<LinePushResult> {
@@ -130,12 +159,14 @@ async function pushText(to: string, text: string): Promise<LinePushResult> {
 
 export async function notifyBookingConfirmed(opts: {
   lineUserId: string;
+  bookingId: string;
   bookingRef: string;
   courtName: string;
   date: string;
   startHour: number;
   endHour: number;
   totalCost: number;
+  coachName?: string | null;
 }) {
   const time = `${String(opts.startHour).padStart(2, "0")}:00 – ${String(opts.endHour).padStart(2, "0")}:00`;
   const altText = "จองสนามสำเร็จ!";
@@ -149,6 +180,11 @@ export async function notifyBookingConfirmed(opts: {
       flexRow("เวลา", time),
       flexRow("หักเครดิต", `${opts.totalCost.toLocaleString()} เครดิต`),
     ]),
+    footer: flexFooterButton(
+      "ชวนเพื่อนมาเล่น",
+      liffBookingInviteUri(opts),
+      "#D97706"
+    ),
   });
 }
 

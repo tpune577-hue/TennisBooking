@@ -149,6 +149,7 @@ export async function POST(req: Request) {
     // Coach cost
     let coachCreditCost = 0;
     let resolvedCoachId: string | null = coachId ?? null;
+    let coachName: string | null = null;
 
     if (type === "court_with_coach" && resolvedCoachId) {
       const coach = await db.query.coachProfiles.findFirst({
@@ -156,9 +157,11 @@ export async function POST(req: Request) {
           eq(schema.coachProfiles.id, resolvedCoachId),
           eq(schema.coachProfiles.isAvailable, true),
         ),
+        with: { user: { columns: { name: true } } },
       });
       if (!coach) throw Object.assign(new Error("COACH_NOT_FOUND"), { code: "COACH_NOT_FOUND" });
       coachCreditCost = coach.pricePerHour * durationHours;
+      coachName = coach.user.name;
     } else if (type === "court_with_coach") {
       throw Object.assign(new Error("COACH_REQUIRED"), { code: "COACH_REQUIRED" });
     }
@@ -225,12 +228,14 @@ export async function POST(req: Request) {
     if (result.lineUserId) {
       notifyBookingConfirmed({
         lineUserId: result.lineUserId,
+        bookingId: result.booking.id,
         bookingRef: result.booking.bookingRef,
-        courtName: parsed.data.courtId, // court name lookup skipped for perf
+        courtName: court.name,
         date: startTime.toISOString().slice(0, 10),
         startHour: startTime.getUTCHours(),
         endHour: endTime.getUTCHours(),
         totalCost: result.booking.totalCreditCost,
+        coachName,
       });
     }
 

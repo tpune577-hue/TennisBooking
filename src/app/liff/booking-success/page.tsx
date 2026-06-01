@@ -233,6 +233,12 @@ function SuccessContent() {
     return () => clearTimeout(t);
   }, []);
 
+  useEffect(() => {
+    if (searchParams.get("invite") === "1" && bookingId) {
+      setShowInviteModal(true);
+    }
+  }, [searchParams, bookingId]);
+
   return (
     <div className="flex flex-col min-h-screen bg-muted/30">
       {/* Green gradient hero */}
