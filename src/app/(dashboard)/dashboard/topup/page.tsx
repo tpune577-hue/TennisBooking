@@ -3,6 +3,7 @@
 import { useState, useCallback, useRef } from "react";
 import Script from "next/script";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -57,6 +58,7 @@ function fmtExpiry(v: string) {
 
 export default function TopupPage() {
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const [selected, setSelected] = useState<number>(1);
   const [step, setStep] = useState<Step>("select");
   const [loading, setLoading] = useState(false);
@@ -119,6 +121,7 @@ export default function TopupPage() {
           const data = await res.json();
           if (data.status === "paid") {
             setAddedCredits(pkg.credits);
+            await updateSession();
             setStep("success");
             setPolling(false);
             pollingRef.current = false;
@@ -187,6 +190,7 @@ export default function TopupPage() {
           }
           if (data.status === "successful" || data.status === "paid") {
             setAddedCredits(pkg.credits);
+            await updateSession();
             setStep("success");
           } else {
             setStep("failed");

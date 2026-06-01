@@ -20,22 +20,27 @@ function getInstance(): NextAuthResult {
     session: { strategy: "jwt" },
     callbacks: {
       ...authConfig.callbacks,
-      async jwt({ token, user, account }) {
+      async jwt({ token, user, account, trigger }) {
         if (user) {
           token.id = user.id;
           token.role = (user as { role?: string }).role ?? "customer";
         }
 
-        if (account?.provider === "line" && user?.id) {
-          const db = getDb();
-          const dbUser = await db.query.users.findFirst({
-            where: eq(schema.users.id, user.id),
-          });
-          if (dbUser) {
-            token.role = dbUser.role;
-            token.tierId = dbUser.tierId;
-            token.creditBalance = dbUser.creditBalance;
-            token.lineUserId = dbUser.lineUserId;
+        // Refresh user data from DB on sign-in OR when session.update() is called
+        if ((account?.provider === "line" && user?.id) || trigger === "update") {
+          const id = (user?.id ?? token.id) as string | undefined;
+          if (id) {
+            const db = getDb();
+            const dbUser = await db.query.users.findFirst({
+              where: eq(schema.users.id, id),
+              columns: { role: true, tierId: true, creditBalance: true, lineUserId: true },
+            });
+            if (dbUser) {
+              token.role = dbUser.role;
+              token.tierId = dbUser.tierId;
+              token.creditBalance = dbUser.creditBalance;
+              token.lineUserId = dbUser.lineUserId;
+            }
           }
         }
 

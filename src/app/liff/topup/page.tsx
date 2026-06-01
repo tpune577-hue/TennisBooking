@@ -62,7 +62,7 @@ function fmtExpiry(v: string) {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function LiffTopupPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { data: session, status, update: updateSession } = useSession();
   const { isReady: liffReady } = useLiff();
 
   const [screen, setScreen] = useState<Screen>("packages");
@@ -144,6 +144,7 @@ export default function LiffTopupPage() {
           const data = await res.json();
           if (data.status === "paid") {
             setAddedCredits(pkg.credits);
+            await updateSession();
             setScreen("success");
             setPolling(false);
             pollingRef.current = false;
@@ -225,6 +226,7 @@ export default function LiffTopupPage() {
 
           if (data.status === "successful" || data.status === "paid") {
             setAddedCredits(pkg.credits);
+            await updateSession();
             setScreen("success");
           } else {
             setScreen("failed");
