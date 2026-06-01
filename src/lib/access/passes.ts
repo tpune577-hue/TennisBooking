@@ -56,33 +56,50 @@ export async function createAccessPass(opts: {
   return pass;
 }
 
-export async function createPassesForConfirmedBooking(bookingId: string) {
-  const db = getDb();
-  const booking = await db.query.bookings.findFirst({
-    where: eq(schema.bookings.id, bookingId),
-    columns: { id: true, userId: true, type: true, coachId: true, status: true },
-  });
-
-  if (!booking || booking.status !== "confirmed") return;
-
-  await createAccessPass({
-    bookingId,
-    userId: booking.userId,
-    role: "host",
-  });
-
-  if (booking.type === "court_with_coach" && booking.coachId) {
-    const coach = await db.query.coachProfiles.findFirst({
-      where: eq(schema.coachProfiles.id, booking.coachId),
-      with: { user: { columns: { id: true, role: true } } },
+/** Returns false if DB tables are missing (run scripts/migrate-club-access.sql). */
+export async function createPassesForConfirmedBooking(
+  bookingId: string
+): Promise<boolean> {
+  try {
+    const db = getDb();
+    const booking = await db.query.bookings.findFirst({
+      where: eq(schema.bookings.id, bookingId),
+      columns: { id: true, userId: true, type: true, coachId: true, status: true },
     });
-    if (coach?.user.role === "coach_freelance") {
-      await createAccessPass({
-        bookingId,
-        userId: coach.user.id,
-        role: "coach",
+
+    if (!booking || booking.status !== "confirmed") return true;
+
+    await createAccessPass({
+      bookingId,
+      userId: booking.userId,
+      role: "host",
+    });
+
+    if (booking.type === "court_with_coach" && booking.coachId) {
+      const coach = await db.query.coachProfiles.findFirst({
+        where: eq(schema.coachProfiles.id, booking.coachId),
+        with: { user: { columns: { id: true, role: true } } },
       });
+      if (coach?.user.role === "coach_freelance") {
+        await createAccessPass({
+          bookingId,
+          userId: coach.user.id,
+          role: "coach",
+        });
+      }
     }
+    return true;
+  } catch (err) {
+    console.error(
+      JSON.stringify({
+        level: "error",
+        msg: "access_pass_create_failed",
+        bookingId,
+        hint: "Run npm run db:push or scripts/migrate-club-access.sql on Neon",
+        error: String(err),
+      })
+    );
+    return false;
   }
 }
 

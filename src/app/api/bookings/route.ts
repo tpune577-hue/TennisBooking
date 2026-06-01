@@ -224,9 +224,14 @@ export async function POST(req: Request) {
       description: `จองสนาม ${bookingRef}`,
     });
 
-    await createPassesForConfirmedBooking(booking.id);
+    const accessPassesOk = await createPassesForConfirmedBooking(booking.id);
 
-    const result = { booking, balanceAfter, lineUserId: user.lineUserId ?? null };
+    const result = {
+      booking,
+      balanceAfter,
+      lineUserId: user.lineUserId ?? null,
+      accessPassesOk,
+    };
 
     // LINE push must complete on Vercel — bare Promise without after/await is often killed at 201.
     if (result.lineUserId) {

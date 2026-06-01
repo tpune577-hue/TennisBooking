@@ -181,6 +181,7 @@ ACCESS_DEVICE_KEY=...                     # Optional: turnstile / hardware scan 
 
 ```bash
 npm run db:push      # push schema (incl. club_access_settings, booking_access_passes, access_scan_events)
+# If push stops at booking_invites prompt: choose "No, truncate" → No (keep data). Or run scripts/migrate-club-access.sql in Neon SQL Editor.
 npm run db:studio    # open Drizzle Studio
 npm run db:seed      # seed courts, tiers, admin user
 ```
