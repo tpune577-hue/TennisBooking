@@ -1,6 +1,6 @@
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/db";
-import { eq } from "drizzle-orm";
+import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 import { createPromptPaySource, createCharge, CREDIT_PACKAGES } from "@/lib/omise";
 
@@ -72,7 +72,7 @@ export async function POST(req: Request) {
 
     // For card payments that succeed immediately
     if (method === "credit_card" && chargeResult.status === "successful") {
-      await fulfillPayment(db, payment.id, userId, pkg.credits, chargeResult.id);
+      await fulfillPayment(db, payment.id, userId, pkg.credits);
     }
 
     return Response.json({
@@ -96,17 +96,21 @@ export async function fulfillPayment(
   paymentId: string,
   userId: string,
   creditAmount: number,
-  chargeId: string,
 ) {
   const now = new Date();
   const expiresAt = new Date(now);
   expiresAt.setFullYear(expiresAt.getFullYear() + 1);
 
-  // Mark payment as paid
-  await db
+  // Atomic idempotency: only proceed if payment is still pending.
+  // Single-row UPDATE WHERE status='pending' is atomic in Postgres —
+  // if two callers race, only one gets a returned row.
+  const claimed = await db
     .update(schema.payments)
     .set({ status: "paid", paidAt: now, updatedAt: now })
-    .where(eq(schema.payments.id, paymentId));
+    .where(and(eq(schema.payments.id, paymentId), eq(schema.payments.status, "pending")))
+    .returning({ id: schema.payments.id });
+
+  if (claimed.length === 0) return; // already fulfilled by another caller
 
   // Get user balance
   const [user] = await db

@@ -163,7 +163,7 @@ export default function LiffTopupPage() {
       setPolling(false);
       setError("หมดเวลารอ กรุณาตรวจสอบยอดเครดิตในหน้า เครดิตของฉัน");
     },
-    [pkg.credits]
+    [pkg.credits, updateSession]
   );
 
   // ─── Credit card flow ───────────────────────────────────────────────────────

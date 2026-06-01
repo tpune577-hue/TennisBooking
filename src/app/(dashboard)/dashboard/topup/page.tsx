@@ -140,7 +140,7 @@ export default function TopupPage() {
       setPolling(false);
       setError("หมดเวลา กรุณาตรวจสอบยอดเครดิตในหน้า เครดิตของฉัน");
     },
-    [pkg.credits]
+    [pkg.credits, updateSession]
   );
 
   async function submitCard() {

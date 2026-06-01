@@ -125,6 +125,7 @@ export async function POST(req: Request) {
     const user = await db.query.users.findFirst({
       where: eq(schema.users.id, userId),
       with: { tier: true },
+      columns: { id: true, creditBalance: true, lineUserId: true },
     });
 
     if (!user) throw Object.assign(new Error("USER_NOT_FOUND"), { code: "USER_NOT_FOUND" });
@@ -218,13 +219,7 @@ export async function POST(req: Request) {
       description: `จองสนาม ${bookingRef}`,
     });
 
-    // Fetch user lineUserId for notification
-    const userForNotif = await db.query.users.findFirst({
-      where: eq(schema.users.id, userId),
-      columns: { lineUserId: true },
-    });
-
-    const result = { booking, balanceAfter, lineUserId: userForNotif?.lineUserId ?? null };
+    const result = { booking, balanceAfter, lineUserId: user.lineUserId ?? null };
 
     // LINE notification (fire-and-forget)
     if (result.lineUserId) {
@@ -255,6 +250,11 @@ export async function POST(req: Request) {
     if (code?.startsWith("MAX_HOURS_EXCEEDED")) {
       const max = code.split(":")[1];
       return Response.json({ error: `จองได้สูงสุด ${max} ชั่วโมงต่อครั้ง` }, { status: 400 });
+    }
+
+    // Postgres unique constraint violation — bookingRef race on same day
+    if (code === "23505") {
+      return Response.json({ error: "เกิดข้อผิดพลาดในการสร้างรหัสจอง กรุณาลองใหม่" }, { status: 409 });
     }
 
     if (code && knownErrors[code]) {

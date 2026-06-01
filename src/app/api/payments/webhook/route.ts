@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       return Response.json({ ok: true });
     }
 
-    await fulfillPayment(db, payment.id, payment.userId, payment.creditAmount, charge.id);
+    await fulfillPayment(db, payment.id, payment.userId, payment.creditAmount);
 
     // LINE notification
     const user = await db.query.users.findFirst({

@@ -40,7 +40,7 @@ export async function GET(
     const charge = await retrieveCharge(payment.omiseChargeId);
 
     if (charge.status === "successful") {
-      await fulfillPayment(db, payment.id, userId, payment.creditAmount, charge.id);
+      await fulfillPayment(db, payment.id, userId, payment.creditAmount);
 
       const user = await db.query.users.findFirst({
         where: eq(schema.users.id, userId),
