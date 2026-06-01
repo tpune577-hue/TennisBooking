@@ -11,6 +11,7 @@ import { bookingStatusEnum, bookingTypeEnum } from "./enums";
 import { users } from "./users";
 import { courts } from "./courts";
 import { coachProfiles } from "./coaches";
+import { bookingGuests, bookingInvites } from "./booking-invites";
 
 export const bookings = pgTable("bookings", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -38,11 +39,13 @@ export const bookings = pgTable("bookings", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-export const bookingsRelations = relations(bookings, ({ one }) => ({
+export const bookingsRelations = relations(bookings, ({ one, many }) => ({
   user: one(users, { fields: [bookings.userId], references: [users.id] }),
   court: one(courts, { fields: [bookings.courtId], references: [courts.id] }),
   coach: one(coachProfiles, {
     fields: [bookings.coachId],
     references: [coachProfiles.id],
   }),
+  guests: many(bookingGuests),
+  invites: many(bookingInvites),
 }));

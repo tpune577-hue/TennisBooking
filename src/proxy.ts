@@ -29,6 +29,8 @@ async function middleware(
     pathname.startsWith("/api/line") ||
     pathname.startsWith("/api/setup") ||
     pathname.startsWith("/liff") ||
+    pathname.startsWith("/invite") ||
+    pathname.startsWith("/api/invites/") ||
     pathname.startsWith("/setup") ||
     pathname === "/sign-in" ||
     pathname === "/"

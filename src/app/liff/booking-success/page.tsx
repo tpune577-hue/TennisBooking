@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 type GameMode = "singles" | "doubles";
 
 type InviteModalProps = {
+  bookingId: string;
   bookingRef: string;
   courtName: string;
   date: string;
@@ -22,6 +23,7 @@ type InviteModalProps = {
 };
 
 function InviteModal({
+  bookingId,
   bookingRef,
   courtName,
   date,
@@ -33,6 +35,7 @@ function InviteModal({
   const [step, setStep] = useState<"select" | "share">("select");
   const [token, setToken] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   const maxPlayers = gameMode === "singles" ? 2 : 4;
   const slotsLeft = maxPlayers - 1;
@@ -42,10 +45,24 @@ function InviteModal({
       ? `${window.location.origin}/invite/${token}`
       : "";
 
-  function handleCreate() {
-    const t = `${bookingRef}-${Math.random().toString(36).slice(2, 8)}`;
-    setToken(t);
-    setStep("share");
+  async function handleCreate() {
+    setCreating(true);
+    try {
+      const res = await fetch(`/api/bookings/${bookingId}/invites`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gameMode }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "สร้างลิงก์ไม่สำเร็จ");
+      setToken(data.token);
+      setStep("share");
+    } catch {
+      // fallback toast not imported — keep minimal
+      alert("สร้างลิงก์เชิญไม่สำเร็จ กรุณาลองใหม่");
+    } finally {
+      setCreating(false);
+    }
   }
 
   function handleCopy() {
@@ -123,8 +140,9 @@ function InviteModal({
             <Button
               className="w-full h-12 text-base font-semibold"
               onClick={handleCreate}
+              disabled={creating}
             >
-              สร้างลิงก์เชิญ
+              {creating ? "กำลังสร้าง..." : "สร้างลิงก์เชิญ"}
             </Button>
           </>
         ) : (
@@ -197,6 +215,7 @@ function SuccessContent() {
   const [shown, setShown] = useState(false);
   const [showInviteModal, setShowInviteModal] = useState(false);
 
+  const bookingId = searchParams.get("bookingId") ?? "";
   const ref = searchParams.get("ref") ?? "";
   const courtName = searchParams.get("courtName") ?? "";
   const date = searchParams.get("date") ?? "";
@@ -301,8 +320,9 @@ function SuccessContent() {
         </Button>
       </div>
 
-      {showInviteModal && (
+      {showInviteModal && bookingId && (
         <InviteModal
+          bookingId={bookingId}
           bookingRef={ref}
           courtName={courtName}
           date={date}

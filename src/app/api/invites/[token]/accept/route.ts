@@ -1,0 +1,49 @@
+import { auth } from "@/lib/auth";
+import { getDb, schema } from "@/db";
+import { eq, and } from "drizzle-orm";
+
+export const dynamic = "force-dynamic";
+
+export async function POST(
+  _req: Request,
+  { params }: { params: Promise<{ token: string }> }
+) {
+  const { token } = await params;
+  const session = await auth();
+  if (!session?.user?.id) return Response.json({ error: "Unauthorized" }, { status: 401 });
+
+  const db = getDb();
+  const invite = await db.query.bookingInvites.findFirst({
+    where: eq(schema.bookingInvites.token, token),
+    with: {
+      booking: { columns: { id: true, userId: true, status: true } },
+    },
+  });
+
+  if (!invite || invite.booking.status !== "confirmed") {
+    return Response.json({ error: "ไม่พบคำเชิญหรือการจองถูกยกเลิกแล้ว" }, { status: 404 });
+  }
+
+  if (invite.booking.userId === session.user.id) {
+    return Response.json({ error: "คุณเป็นเจ้าของการจองอยู่แล้ว" }, { status: 400 });
+  }
+
+  const existing = await db.query.bookingGuests.findFirst({
+    where: and(
+      eq(schema.bookingGuests.bookingId, invite.booking.id),
+      eq(schema.bookingGuests.userId, session.user.id)
+    ),
+  });
+
+  if (existing) {
+    return Response.json({ success: true, alreadyAccepted: true });
+  }
+
+  await db.insert(schema.bookingGuests).values({
+    bookingId: invite.booking.id,
+    userId: session.user.id,
+    inviteId: invite.id,
+  });
+
+  return Response.json({ success: true, bookingId: invite.booking.id });
+}

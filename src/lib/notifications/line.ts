@@ -1,3 +1,5 @@
+import { formatBookingSlotTh } from "@/lib/bookings/format-slot";
+
 const LINE_API = "https://api.line.me/v2/bot/message/push";
 
 export type LinePushResult =
@@ -66,19 +68,59 @@ export async function notifyBookingConfirmed(opts: {
   );
 }
 
+/** Member self-cancel (24h policy messaging). */
 export async function notifyBookingCancelled(opts: {
   lineUserId: string;
   bookingRef: string;
   courtName: string;
+  startTime: Date;
+  endTime: Date;
   refunded: boolean;
   creditRefunded: number;
 }) {
+  const slot = formatBookingSlotTh(opts.startTime, opts.endTime);
   const refundMsg = opts.refunded
-    ? `\nคืนเครดิต: ${opts.creditRefunded} เครดิต`
-    : `\n(ไม่คืนเครดิต เนื่องจากยกเลิกไม่ถึง 24 ชั่วโมงก่อนเวลาจอง)`;
+    ? `\n\nคืนเครดิต: ${opts.creditRefunded.toLocaleString()} เครดิต`
+    : `\n\n(ไม่คืนเครดิต เนื่องจากยกเลิกไม่ถึง 24 ชั่วโมงก่อนเวลาจอง)`;
   await push(
     opts.lineUserId,
-    `❌ ยกเลิกการจองแล้ว\n\nรหัส: ${opts.bookingRef}\nสนาม: ${opts.courtName}${refundMsg}`
+    `❌ ยกเลิกการจองแล้ว\n\nรหัส: ${opts.bookingRef}\nสนาม: ${opts.courtName}\n${slot}${refundMsg}`
+  );
+}
+
+/** Booking owner — admin or club-initiated cancel. */
+export async function notifyBookingCancelledOwner(opts: {
+  lineUserId: string;
+  bookingRef: string;
+  courtName: string;
+  startTime: Date;
+  endTime: Date;
+  refunded: boolean;
+  creditRefunded: number;
+}) {
+  const slot = formatBookingSlotTh(opts.startTime, opts.endTime);
+  const refundMsg = opts.refunded
+    ? `\n\nคืนเครดิต: ${opts.creditRefunded.toLocaleString()} เครดิต`
+    : `\n\n(ไม่มีการคืนเครดิต)`;
+  await push(
+    opts.lineUserId,
+    `❌ การจองของคุณถูกยกเลิก\n\nรหัส: ${opts.bookingRef}\nสนาม: ${opts.courtName}\n${slot}${refundMsg}`
+  );
+}
+
+/** Guest who accepted an invite — slot info only, no credit wording. */
+export async function notifyBookingCancelledGuest(opts: {
+  lineUserId: string;
+  bookingRef: string;
+  courtName: string;
+  startTime: Date;
+  endTime: Date;
+  hostName: string;
+}) {
+  const slot = formatBookingSlotTh(opts.startTime, opts.endTime);
+  await push(
+    opts.lineUserId,
+    `❌ การจองที่คุณได้รับเชิญถูกยกเลิก\n\nรหัส: ${opts.bookingRef}\nสนาม: ${opts.courtName}\n${slot}\n\nเจ้าของการจอง: ${opts.hostName}`
   );
 }
 

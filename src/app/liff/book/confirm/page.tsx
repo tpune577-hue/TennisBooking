@@ -125,6 +125,7 @@ function ConfirmContent() {
       }
 
       const p = new URLSearchParams({
+        bookingId: data.booking.id,
         ref: data.booking.bookingRef,
         courtName,
         date,

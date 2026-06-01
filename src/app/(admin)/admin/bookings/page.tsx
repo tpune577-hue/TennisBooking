@@ -10,6 +10,10 @@ import {
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { CalendarDays, X, AlertCircle } from "lucide-react";
+import {
+  CancelBookingDialog,
+  type CancelBookingTarget,
+} from "@/components/admin/cancel-booking-dialog";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +54,7 @@ export default function AdminBookingsPage() {
   const [status, setStatus] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-  const [cancelling, setCancelling] = useState<string | null>(null);
+  const [cancelTarget, setCancelTarget] = useState<CancelBookingTarget | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
   const load = useCallback(async () => {
@@ -70,18 +74,11 @@ export default function AdminBookingsPage() {
 
   useEffect(() => { load(); }, [load]);
 
-  async function cancel(id: string) {
-    if (!confirm("ยืนยันการยกเลิกการจอง?")) return;
-    setCancelling(id);
-    try {
-      const res = await fetch(`/api/bookings/${id}/cancel`, { method: "POST" });
-      const data = await res.json();
-      setToast({ msg: res.ok ? "ยกเลิกสำเร็จ" : (data.error ?? "เกิดข้อผิดพลาด"), ok: res.ok });
-      if (res.ok) load();
-      setTimeout(() => setToast(null), 3000);
-    } finally {
-      setCancelling(null);
-    }
+  function handleCancelSuccess(msg: string) {
+    const ok = !msg.includes("ไม่สำเร็จ");
+    setToast({ msg, ok });
+    if (ok) load();
+    setTimeout(() => setToast(null), 5000);
   }
 
   const confirmedCount = bookings.filter((b) => b.status === "confirmed").length;
@@ -203,10 +200,17 @@ export default function AdminBookingsPage() {
                           size="sm"
                           variant="outline"
                           className="text-xs text-destructive border-destructive/30 hover:bg-destructive/10"
-                          onClick={() => cancel(b.id)}
-                          disabled={cancelling === b.id}
+                          onClick={() =>
+                            setCancelTarget({
+                              id: b.id,
+                              bookingRef: b.bookingRef,
+                              courtName: b.court.name,
+                              startTime: b.startTime,
+                              totalCreditCost: b.totalCreditCost,
+                            })
+                          }
                         >
-                          {cancelling === b.id ? "..." : "ยกเลิก"}
+                          ยกเลิก
                         </Button>
                       )}
                     </TableCell>
@@ -217,6 +221,12 @@ export default function AdminBookingsPage() {
           </TableBody>
         </Table>
       </div>
+
+      <CancelBookingDialog
+        booking={cancelTarget}
+        onClose={() => setCancelTarget(null)}
+        onSuccess={handleCancelSuccess}
+      />
     </div>
   );
 }

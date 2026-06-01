@@ -6,6 +6,7 @@ export * from "./packages";
 export * from "./courts";
 export * from "./coaches";
 export * from "./bookings";
+export * from "./booking-invites";
 export * from "./credits";
 export * from "./payments";
 export * from "./notifications";

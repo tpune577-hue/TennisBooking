@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/db";
-import { eq, and } from "drizzle-orm";
-import { notifyBookingCancelled } from "@/lib/notifications/line";
+import { eq } from "drizzle-orm";
+import { cancelBooking } from "@/lib/bookings/cancel-booking";
 
 export const dynamic = "force-dynamic";
 
@@ -23,78 +23,33 @@ export async function POST(
 
   try {
     const db = getDb();
-
     const booking = await db.query.bookings.findFirst({
       where: eq(schema.bookings.id, id),
-      with: {
-        court: { columns: { name: true } },
-        user: { columns: { lineUserId: true } },
-      },
+      columns: { userId: true, status: true, startTime: true },
     });
 
     if (!booking) return Response.json({ error: "ไม่พบการจอง" }, { status: 404 });
     if (!isAdmin && booking.userId !== userId)
       return Response.json({ error: "Unauthorized" }, { status: 403 });
-    if (booking.status === "cancelled")
-      return Response.json({ error: "ยกเลิกไปแล้ว" }, { status: 400 });
-    if (booking.status !== "confirmed")
-      return Response.json({ error: "ไม่สามารถยกเลิกได้" }, { status: 400 });
 
     const now = new Date();
     const hoursUntilStart =
       (booking.startTime.getTime() - now.getTime()) / (1000 * 60 * 60);
-    const shouldRefund = hoursUntilStart >= 24;
+    const refundCredits = hoursUntilStart >= 24;
 
-    await db
-      .update(schema.bookings)
-      .set({
-        status: "cancelled",
-        cancelledAt: now,
-        cancelledBy: userId,
-        creditRefunded: shouldRefund,
-        updatedAt: now,
-      })
-      .where(eq(schema.bookings.id, id));
+    const result = await cancelBooking({
+      bookingId: id,
+      cancelledByUserId: userId,
+      refundCredits,
+      initiatedBy: isAdmin ? "admin" : "member",
+    });
 
-    if (shouldRefund && booking.totalCreditCost > 0) {
-      const [user] = await db
-        .select({ creditBalance: schema.users.creditBalance })
-        .from(schema.users)
-        .where(eq(schema.users.id, booking.userId));
-
-      const balanceBefore = user.creditBalance;
-      const balanceAfter = balanceBefore + booking.totalCreditCost;
-
-      await db
-        .update(schema.users)
-        .set({ creditBalance: balanceAfter, updatedAt: now })
-        .where(eq(schema.users.id, booking.userId));
-
-      await db.insert(schema.creditTransactions).values({
-        userId: booking.userId,
-        type: "refund",
-        amount: booking.totalCreditCost,
-        balanceBefore,
-        balanceAfter,
-        bookingId: id,
-        description: `คืนเครดิต ยกเลิกจอง ${booking.bookingRef}`,
-      });
-    }
-
-    // LINE notification
-    if (booking.user.lineUserId) {
-      await notifyBookingCancelled({
-        lineUserId: booking.user.lineUserId,
-        bookingRef: booking.bookingRef,
-        courtName: booking.court.name,
-        refunded: shouldRefund,
-        creditRefunded: shouldRefund ? booking.totalCreditCost : 0,
-      });
-    }
-
-    console.log(JSON.stringify({ level: "info", msg: "booking_cancelled", id, refunded: shouldRefund, ms: Date.now() - start }));
-    return Response.json({ success: true, refunded: shouldRefund, creditRefunded: shouldRefund ? booking.totalCreditCost : 0 });
+    console.log(JSON.stringify({ level: "info", msg: "booking_cancelled", id, refunded: result.refunded, ms: Date.now() - start }));
+    return Response.json({ success: true, ...result });
   } catch (err) {
+    const code = (err as { code?: string }).code;
+    if (code === "ALREADY_CANCELLED") return Response.json({ error: "ยกเลิกไปแล้ว" }, { status: 400 });
+    if (code === "INVALID_STATUS") return Response.json({ error: "ไม่สามารถยกเลิกได้" }, { status: 400 });
     console.error(JSON.stringify({ level: "error", msg: "cancel_failed", id, error: String(err), ms: Date.now() - start }));
     return Response.json({ error: "Internal server error" }, { status: 500 });
   }
