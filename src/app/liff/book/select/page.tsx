@@ -68,7 +68,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 function SelectContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const { isReady: liffReady } = useLiff();
   const { creditBalance } = useCreditBalance();
 
@@ -219,7 +219,7 @@ function SelectContent() {
     router.push(`/liff/book/confirm?${p.toString()}`);
   }
 
-  if (status === "loading" || !liffReady) {
+  if ((status === "loading" && !session) || !liffReady) {
     return (
       <div className="flex flex-col items-center justify-center flex-1 gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

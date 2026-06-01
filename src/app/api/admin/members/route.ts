@@ -104,12 +104,14 @@ export async function POST(req: Request) {
     });
 
     if (user.lineUserId) {
-      notifyCreditAdjusted({
+      await notifyCreditAdjusted({
         lineUserId: user.lineUserId,
         amount,
         newBalance: balanceAfter,
         note: description,
       });
+    } else {
+      console.log(JSON.stringify({ level: "warn", msg: "credit_adjust_no_line_user", userId }));
     }
 
     console.log(JSON.stringify({ level: "info", msg: "credit_adjusted", userId, amount, ms: Date.now() - start }));

@@ -45,7 +45,7 @@ function InfoRow({
 function ConfirmContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const { isReady: liffReady } = useLiff();
   const { creditBalance, loading: balanceLoading } = useCreditBalance();
   const [confirming, setConfirming] = useState(false);
@@ -142,7 +142,7 @@ function ConfirmContent() {
     }
   }
 
-  if (status === "loading" || !liffReady) {
+  if ((status === "loading" && !session) || !liffReady) {
     return (
       <div className="flex flex-col items-center justify-center flex-1 gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

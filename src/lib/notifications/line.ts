@@ -2,21 +2,42 @@ const LINE_API = "https://api.line.me/v2/bot/message/push";
 
 async function push(to: string, text: string) {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
-  if (!token || !to) return;
+  if (!token) {
+    console.error(JSON.stringify({ level: "error", msg: "line_push_skipped", reason: "missing LINE_CHANNEL_ACCESS_TOKEN" }));
+    return;
+  }
+  if (!to) {
+    console.error(JSON.stringify({ level: "error", msg: "line_push_skipped", reason: "missing lineUserId" }));
+    return;
+  }
 
-  await fetch(LINE_API, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    body: JSON.stringify({
-      to,
-      messages: [{ type: "text", text }],
-    }),
-  }).catch((err) =>
-    console.error(JSON.stringify({ level: "error", msg: "line_push_failed", error: String(err) }))
-  );
+  try {
+    const res = await fetch(LINE_API, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        to,
+        messages: [{ type: "text", text }],
+      }),
+    });
+
+    if (!res.ok) {
+      const body = await res.text();
+      console.error(
+        JSON.stringify({
+          level: "error",
+          msg: "line_push_failed",
+          status: res.status,
+          body,
+        })
+      );
+    }
+  } catch (err) {
+    console.error(JSON.stringify({ level: "error", msg: "line_push_failed", error: String(err) }));
+  }
 }
 
 export async function notifyBookingConfirmed(opts: {
@@ -70,7 +91,7 @@ export async function notifyCreditExpiringSoon(opts: {
 }) {
   await push(
     opts.lineUserId,
-    `⚠️ เครดิตใกล้หมดอายุ\n\n${opts.amount} เครดิต จะหมดอายุใน ${opts.daysLeft} วัน (${opts.expiresAt})\nกรุณาใช้ก่อนหมดอายุ`
+    `⚠️ เครดิตใกลงหมดอายุ\n\n${opts.amount} เครดิต จะหมดอายุใน ${opts.daysLeft} วัน (${opts.expiresAt})\nกรุณาใช้ก่อนหมดอายุ`
   );
 }
 
