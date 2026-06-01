@@ -1,3 +1,4 @@
+import { after } from "next/server";
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/db";
 import { and, eq, ne, lt, gt, sql, desc } from "drizzle-orm";
@@ -224,9 +225,9 @@ export async function POST(req: Request) {
 
     const result = { booking, balanceAfter, lineUserId: user.lineUserId ?? null };
 
-    // LINE notification (fire-and-forget)
+    // LINE push must complete on Vercel — bare Promise without after/await is often killed at 201.
     if (result.lineUserId) {
-      notifyBookingConfirmed({
+      const lineNotifyPayload = {
         lineUserId: result.lineUserId,
         bookingId: result.booking.id,
         bookingRef: result.booking.bookingRef,
@@ -236,6 +237,20 @@ export async function POST(req: Request) {
         endHour: endTime.getUTCHours(),
         totalCost: result.booking.totalCreditCost,
         coachName,
+      };
+      after(async () => {
+        const push = await notifyBookingConfirmed(lineNotifyPayload);
+        if (!push.ok) {
+          console.error(
+            JSON.stringify({
+              level: "error",
+              msg: "booking_line_notify_failed",
+              bookingRef: result.booking.bookingRef,
+              reason: push.reason,
+              status: push.status,
+            })
+          );
+        }
       });
     }
 

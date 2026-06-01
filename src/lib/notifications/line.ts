@@ -167,10 +167,10 @@ export async function notifyBookingConfirmed(opts: {
   endHour: number;
   totalCost: number;
   coachName?: string | null;
-}) {
+}): Promise<LinePushResult> {
   const time = `${String(opts.startHour).padStart(2, "0")}:00 – ${String(opts.endHour).padStart(2, "0")}:00`;
   const altText = "จองสนามสำเร็จ!";
-  await pushFlex(opts.lineUserId, altText, {
+  return pushFlex(opts.lineUserId, altText, {
     type: "bubble",
     header: flexHeader("✅ จองสนามสำเร็จ!", COLORS.success),
     body: flexBody([
