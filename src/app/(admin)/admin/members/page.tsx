@@ -78,7 +78,14 @@ export default function MembersPage() {
         body: JSON.stringify({ userId: adjustTarget.id, amount, description: adjustNote || `ปรับยอดโดย admin` }),
       });
       if (res.ok) {
-        setToast("ปรับยอดเครดิตสำเร็จ");
+        const data = await res.json();
+        const lineMsg =
+          data.lineNotification?.sent
+            ? " · ส่งแจ้งเตือน LINE แล้ว"
+            : data.lineNotification?.reason
+              ? ` · ไม่ได้ส่ง LINE (${data.lineNotification.reason})`
+              : "";
+        setToast(`ปรับยอดเครดิตสำเร็จ${lineMsg}`);
         setAdjustTarget(null);
         setAdjustAmount("");
         setAdjustNote("");

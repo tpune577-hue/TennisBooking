@@ -1,14 +1,18 @@
 const LINE_API = "https://api.line.me/v2/bot/message/push";
 
-async function push(to: string, text: string) {
+export type LinePushResult =
+  | { ok: true }
+  | { ok: false; reason: "missing_token" | "missing_recipient" | "http_error" | "network_error"; status?: number; detail?: string };
+
+async function push(to: string, text: string): Promise<LinePushResult> {
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
   if (!token) {
     console.error(JSON.stringify({ level: "error", msg: "line_push_skipped", reason: "missing LINE_CHANNEL_ACCESS_TOKEN" }));
-    return;
+    return { ok: false, reason: "missing_token" };
   }
   if (!to) {
     console.error(JSON.stringify({ level: "error", msg: "line_push_skipped", reason: "missing lineUserId" }));
-    return;
+    return { ok: false, reason: "missing_recipient" };
   }
 
   try {
@@ -32,11 +36,17 @@ async function push(to: string, text: string) {
           msg: "line_push_failed",
           status: res.status,
           body,
+          to,
         })
       );
+      return { ok: false, reason: "http_error", status: res.status, detail: body };
     }
+
+    console.log(JSON.stringify({ level: "info", msg: "line_push_ok", to }));
+    return { ok: true };
   } catch (err) {
     console.error(JSON.stringify({ level: "error", msg: "line_push_failed", error: String(err) }));
+    return { ok: false, reason: "network_error", detail: String(err) };
   }
 }
 
@@ -100,12 +110,12 @@ export async function notifyCreditAdjusted(opts: {
   amount: number;
   newBalance: number;
   note: string;
-}) {
+}): Promise<LinePushResult> {
   const changeLabel =
     opts.amount >= 0
       ? `+${opts.amount.toLocaleString()}`
       : opts.amount.toLocaleString();
-  await push(
+  return push(
     opts.lineUserId,
     `🔔 ปรับยอดเครดิต\n\nเปลี่ยนแปลง: ${changeLabel} เครดิต\nยอดคงเหลือ: ${opts.newBalance.toLocaleString()} เครดิต\n\nหมายเหตุ: ${opts.note}`
   );

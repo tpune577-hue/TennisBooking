@@ -103,19 +103,40 @@ export async function POST(req: Request) {
       description,
     });
 
+    let lineNotification: { sent: boolean; reason?: string } = { sent: false, reason: "no_line_user" };
+
     if (user.lineUserId) {
-      await notifyCreditAdjusted({
+      const pushResult = await notifyCreditAdjusted({
         lineUserId: user.lineUserId,
         amount,
         newBalance: balanceAfter,
         note: description,
       });
+      if (pushResult.ok) {
+        lineNotification = { sent: true };
+      } else {
+        lineNotification = {
+          sent: false,
+          reason: pushResult.reason === "http_error"
+            ? `line_api_${pushResult.status}`
+            : pushResult.reason,
+        };
+        console.error(
+          JSON.stringify({
+            level: "error",
+            msg: "credit_adjust_line_failed",
+            userId,
+            lineUserId: user.lineUserId,
+            ...pushResult,
+          })
+        );
+      }
     } else {
       console.log(JSON.stringify({ level: "warn", msg: "credit_adjust_no_line_user", userId }));
     }
 
-    console.log(JSON.stringify({ level: "info", msg: "credit_adjusted", userId, amount, ms: Date.now() - start }));
-    return Response.json({ success: true });
+    console.log(JSON.stringify({ level: "info", msg: "credit_adjusted", userId, amount, lineNotification, ms: Date.now() - start }));
+    return Response.json({ success: true, lineNotification });
   } catch (err) {
     console.error(JSON.stringify({ level: "error", msg: "adjust_credit_failed", error: String(err), ms: Date.now() - start }));
     return Response.json({ error: "Internal server error" }, { status: 500 });
