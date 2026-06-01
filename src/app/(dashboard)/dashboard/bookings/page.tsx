@@ -4,7 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
-import { Calendar, Clock, X, AlertCircle } from "lucide-react";
+import Link from "next/link";
+import { Calendar, Clock, X, AlertCircle, QrCode } from "lucide-react";
 
 interface Booking {
   id: string;
@@ -177,6 +178,15 @@ export default function BookingsPage() {
 
                   <div className="flex flex-col items-end gap-2 shrink-0">
                     <span className="text-sm font-semibold text-foreground">{b.totalCreditCost} เครดิต</span>
+                    {b.status === "confirmed" && (
+                      <Link
+                        href={`/dashboard/access?bookingId=${b.id}`}
+                        className="inline-flex items-center text-xs border border-border rounded-md px-2 py-1 bg-secondary hover:bg-secondary/80"
+                      >
+                        <QrCode className="h-3 w-3 mr-1" />
+                        QR เข้าสนาม
+                      </Link>
+                    )}
                     {canCancel && (
                       <Button
                         size="sm"

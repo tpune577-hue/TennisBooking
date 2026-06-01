@@ -5,88 +5,25 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Copy, CheckCheck, Users, Loader2 } from "lucide-react";
+import { CheckCircle2, Users, Loader2, QrCode } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-// ─── Invite Modal ────────────────────────────────────────────────────────────
-
-type GameMode = "singles" | "doubles";
-
-type InviteModalProps = {
-  bookingId: string;
-  bookingRef: string;
-  courtName: string;
-  date: string;
-  startHour: number;
-  coachName?: string | null;
-  onClose: () => void;
-};
+import { BookingPartyPanel } from "@/components/access/booking-party-panel";
 
 function InviteModal({
   bookingId,
-  bookingRef,
   courtName,
   date,
   startHour,
   coachName,
   onClose,
-}: InviteModalProps) {
-  const [gameMode, setGameMode] = useState<GameMode>("singles");
-  const [step, setStep] = useState<"select" | "share">("select");
-  const [token, setToken] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
-  const [creating, setCreating] = useState(false);
-
-  const maxPlayers = gameMode === "singles" ? 2 : 4;
-  const slotsLeft = maxPlayers - 1;
-
-  const inviteLink =
-    typeof window !== "undefined" && token
-      ? `${window.location.origin}/invite/${token}`
-      : "";
-
-  async function handleCreate() {
-    setCreating(true);
-    try {
-      const res = await fetch(`/api/bookings/${bookingId}/invites`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ gameMode }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "สร้างลิงก์ไม่สำเร็จ");
-      setToken(data.token);
-      setStep("share");
-    } catch {
-      // fallback toast not imported — keep minimal
-      alert("สร้างลิงก์เชิญไม่สำเร็จ กรุณาลองใหม่");
-    } finally {
-      setCreating(false);
-    }
-  }
-
-  function handleCopy() {
-    navigator.clipboard.writeText(inviteLink).catch(() => {});
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  function handleLineShare() {
-    const dateDisplay = date
-      ? format(new Date(date + "T12:00:00"), "EEE d MMM", { locale: th })
-      : "";
-    const timeStr = `${String(startHour).padStart(2, "0")}:00 น.`;
-    const text =
-      `🎾 เชิญมาเล่นเทนนิสด้วยกัน!\n` +
-      `${courtName} · ${dateDisplay} เวลา ${timeStr}\n` +
-      (coachName ? `โค้ช: ${coachName}\n` : "") +
-      `\nกดรับคำเชิญ: ${inviteLink}`;
-    window.open(
-      `https://line.me/R/msg/text/?${encodeURIComponent(text)}`,
-      "_blank"
-    );
-  }
-
+}: {
+  bookingId: string;
+  courtName: string;
+  date: string;
+  startHour: number;
+  coachName?: string | null;
+  onClose: () => void;
+}) {
   return (
     <div
       className="fixed inset-0 bg-black/55 flex items-end z-50"
@@ -94,120 +31,20 @@ function InviteModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-card rounded-t-3xl w-full max-w-[430px] mx-auto px-5 pb-10 animate-in slide-in-from-bottom-4 duration-300">
+      <div className="bg-card rounded-t-3xl w-full max-w-[430px] mx-auto px-5 pb-10 animate-in slide-in-from-bottom-4 duration-300 max-h-[85vh] overflow-y-auto">
         <div className="w-10 h-1 bg-border rounded-full mx-auto my-3" />
-
-        {step === "select" ? (
-          <>
-            <h2 className="text-lg font-black mb-1">ชวนเพื่อนมาเล่น</h2>
-            <p className="text-sm text-muted-foreground mb-5">
-              เลือกรูปแบบการเล่น แล้วสร้างลิงก์เชิญ
-            </p>
-
-            <div className="flex gap-3 mb-5">
-              {(["singles", "doubles"] as GameMode[]).map((mode) => {
-                const isActive = gameMode === mode;
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => setGameMode(mode)}
-                    className={cn(
-                      "flex-1 py-4 px-3 rounded-2xl border-2 transition-all text-center",
-                      isActive
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-background"
-                    )}
-                  >
-                    <div className="text-3xl mb-1.5 select-none">
-                      {mode === "singles" ? "🧑‍🤝‍🧑" : "👥"}
-                    </div>
-                    <p
-                      className={cn(
-                        "font-black text-sm mb-0.5",
-                        isActive ? "text-primary" : "text-foreground"
-                      )}
-                    >
-                      {mode === "singles" ? "Singles" : "Doubles"}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {mode === "singles" ? "1 vs 1 · 2 คน" : "2 vs 2 · 4 คน"}
-                    </p>
-                  </button>
-                );
-              })}
-            </div>
-
-            <Button
-              className="w-full h-12 text-base font-semibold"
-              onClick={handleCreate}
-              disabled={creating}
-            >
-              {creating ? "กำลังสร้าง..." : "สร้างลิงก์เชิญ"}
-            </Button>
-          </>
-        ) : (
-          <>
-            <h2 className="text-lg font-black mb-1">ลิงก์พร้อมแล้ว!</h2>
-            <p className="text-sm text-muted-foreground mb-5">
-              {gameMode === "singles" ? "Singles" : "Doubles"} ·{" "}
-              รอเพื่อนอีก {slotsLeft} คน · หมดอายุเมื่อถึงเวลาจอง
-            </p>
-
-            {/* Link preview */}
-            <div className="flex items-center gap-2 bg-muted/30 rounded-xl px-3 py-2.5 border border-border mb-4">
-              <span className="flex-1 text-xs text-muted-foreground font-mono overflow-hidden text-ellipsis whitespace-nowrap">
-                {inviteLink}
-              </span>
-              <button
-                onClick={handleCopy}
-                className={cn(
-                  "shrink-0 transition-colors",
-                  copied ? "text-[color:var(--chart-2)]" : "text-muted-foreground"
-                )}
-              >
-                {copied ? <CheckCheck className="h-4.5 w-4.5" /> : <Copy className="h-4.5 w-4.5" />}
-              </button>
-            </div>
-
-            <button
-              onClick={handleCopy}
-              className={cn(
-                "w-full flex items-center justify-center gap-2 py-3 rounded-xl border-2 font-semibold text-sm transition-all mb-2",
-                copied
-                  ? "border-[color:var(--chart-2)] text-[color:var(--chart-2)]"
-                  : "border-border text-foreground hover:bg-muted"
-              )}
-            >
-              {copied ? (
-                <CheckCheck className="h-4 w-4" />
-              ) : (
-                <Copy className="h-4 w-4" />
-              )}
-              {copied ? "คัดลอกแล้ว!" : "คัดลอกลิงก์"}
-            </button>
-
-            <button
-              onClick={handleLineShare}
-              className="w-full flex items-center justify-center gap-3 py-3.5 rounded-xl bg-[#06C755] text-white font-black text-base mb-2"
-            >
-              <span className="text-xl select-none">💚</span>
-              แชร์ผ่าน LINE
-            </button>
-
-            <button
-              onClick={onClose}
-              className="w-full py-3 rounded-xl border-2 border-border font-semibold text-sm text-foreground hover:bg-muted transition-colors"
-            >
-              ปิด
-            </button>
-          </>
-        )}
+        <BookingPartyPanel
+          bookingId={bookingId}
+          courtName={courtName}
+          date={date}
+          startHour={startHour}
+          coachName={coachName}
+          onClose={onClose}
+        />
       </div>
     </div>
   );
 }
-
-// ─── Success Content ─────────────────────────────────────────────────────────
 
 function SuccessContent() {
   const searchParams = useSearchParams();
@@ -241,14 +78,11 @@ function SuccessContent() {
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/30">
-      {/* Green gradient hero */}
       <div
         className={cn(
           "w-full pt-16 pb-10 px-6 flex flex-col items-center text-center transition-all duration-500",
           "bg-gradient-to-br from-[color:var(--chart-2)] to-emerald-700",
-          shown
-            ? "opacity-100 translate-y-0"
-            : "opacity-0 -translate-y-4"
+          shown ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
         )}
       >
         <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mb-4">
@@ -258,15 +92,12 @@ function SuccessContent() {
         <p className="text-sm text-white/80">การจองของคุณได้รับการยืนยันแล้ว</p>
         {ref && (
           <div className="mt-3 bg-white/15 rounded-xl px-4 py-2">
-            <p className="text-white font-bold text-sm tracking-widest font-mono">
-              # {ref}
-            </p>
+            <p className="text-white font-bold text-sm tracking-widest font-mono"># {ref}</p>
           </div>
         )}
       </div>
 
       <div className="flex-1 p-4 space-y-3">
-        {/* Booking details */}
         <div className="bg-card rounded-2xl p-5 border border-border shadow-sm">
           <p className="font-bold text-sm mb-4">📋 รายละเอียดการจอง</p>
           <div className="space-y-3">
@@ -278,17 +109,24 @@ function SuccessContent() {
             <DetailRow label="สนาม" value={courtName} />
             {coachName && <DetailRow label="โค้ช" value={coachName} />}
             {total > 0 && (
-              <DetailRow
-                label="ชำระแล้ว"
-                value={`${total} เครดิต`}
-                highlight
-              />
+              <DetailRow label="ชำระแล้ว" value={`${total} เครดิต`} highlight />
             )}
           </div>
         </div>
 
-        {/* Invite friends banner */}
+        {bookingId && (
+          <Button
+            className="w-full h-12 text-base font-semibold gap-2"
+            variant="secondary"
+            onClick={() => router.push(`/liff/access?bookingId=${bookingId}`)}
+          >
+            <QrCode className="h-5 w-5" />
+            ดู QR เข้าสนาม
+          </Button>
+        )}
+
         <button
+          type="button"
           onClick={() => setShowInviteModal(true)}
           className="w-full flex items-center gap-4 p-5 rounded-2xl text-left transition-all active:scale-[0.99]"
           style={{
@@ -302,14 +140,11 @@ function SuccessContent() {
             <p className="text-white font-extrabold text-base leading-tight">
               ชวนเพื่อนมาเล่นด้วยกัน
             </p>
-            <p className="text-white/85 text-sm mt-0.5">
-              สร้างลิงก์เชิญ แชร์ผ่าน LINE ได้เลย
-            </p>
+            <p className="text-white/85 text-sm mt-0.5">สร้างลิงก์เชิญ แชร์ผ่าน LINE ได้เลย</p>
           </div>
           <span className="text-white/80 text-xl">›</span>
         </button>
 
-        {/* Actions */}
         <Button
           className="w-full h-12 text-base font-semibold"
           onClick={() => router.push("/dashboard")}
@@ -329,7 +164,6 @@ function SuccessContent() {
       {showInviteModal && bookingId && (
         <InviteModal
           bookingId={bookingId}
-          bookingRef={ref}
           courtName={courtName}
           date={date}
           startHour={startHour}
@@ -370,9 +204,7 @@ function DetailRow({
       <span
         className={cn(
           "font-semibold",
-          highlight
-            ? "text-[color:var(--chart-2)] font-extrabold"
-            : "text-foreground"
+          highlight ? "text-[color:var(--chart-2)] font-extrabold" : "text-foreground"
         )}
       >
         {value}

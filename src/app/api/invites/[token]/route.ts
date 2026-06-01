@@ -1,5 +1,7 @@
 import { getDb, schema } from "@/db";
 import { eq } from "drizzle-orm";
+import { getClubAccessSettings, maxGuestSlots } from "@/lib/access/settings";
+import { countBookingGuests } from "@/lib/access/passes";
 
 export const dynamic = "force-dynamic";
 
@@ -26,10 +28,17 @@ export async function GET(
     return Response.json({ error: "ไม่พบคำเชิญหรือการจองถูกยกเลิกแล้ว" }, { status: 404 });
   }
 
+  const settings = await getClubAccessSettings();
+  const guestCount = await countBookingGuests(invite.booking.id);
+  const maxGuests = maxGuestSlots(settings);
+
   return Response.json({
     token: invite.token,
-    gameMode: invite.gameMode,
+    guestCount,
+    maxGuests,
+    slotsFull: guestCount >= maxGuests,
     booking: {
+      id: invite.booking.id,
       ref: invite.booking.bookingRef,
       courtName: invite.booking.court.name,
       hostName: invite.booking.user.name,

@@ -13,6 +13,8 @@ import {
   Wallet,
   Settings,
   CreditCard,
+  ScanLine,
+  QrCode,
 } from "lucide-react";
 
 interface NavItem {
@@ -81,6 +83,18 @@ const navItems: NavItem[] = [
     href: "/admin/finance",
     label: "การเงิน",
     icon: Wallet,
+    roles: ["staff", "super_admin"],
+  },
+  {
+    href: "/admin/access/scan",
+    label: "สแกน QR",
+    icon: ScanLine,
+    roles: ["staff", "super_admin"],
+  },
+  {
+    href: "/admin/access/settings",
+    label: "ตั้งค่า QR",
+    icon: QrCode,
     roles: ["staff", "super_admin"],
   },
   {

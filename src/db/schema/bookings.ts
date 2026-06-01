@@ -12,6 +12,7 @@ import { users } from "./users";
 import { courts } from "./courts";
 import { coachProfiles } from "./coaches";
 import { bookingGuests, bookingInvites } from "./booking-invites";
+import { bookingAccessPasses } from "./access";
 
 export const bookings = pgTable("bookings", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -48,4 +49,5 @@ export const bookingsRelations = relations(bookings, ({ one, many }) => ({
   }),
   guests: many(bookingGuests),
   invites: many(bookingInvites),
+  accessPasses: many(bookingAccessPasses),
 }));

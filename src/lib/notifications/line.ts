@@ -81,6 +81,10 @@ function liffTopupUri(): string {
   return appUri("/liff/topup");
 }
 
+export function liffBookingAccessUri(bookingId: string): string {
+  return appUri(`/liff/access?bookingId=${bookingId}`);
+}
+
 /** Opens LIFF booking success with invite modal (host shares link from there). */
 export function liffBookingInviteUri(opts: {
   bookingId: string;
@@ -153,7 +157,7 @@ async function pushFlex(to: string, altText: string, contents: FlexBubble): Prom
   return pushMessages(to, [{ type: "flex", altText, contents }]);
 }
 
-async function pushText(to: string, text: string): Promise<LinePushResult> {
+export async function pushText(to: string, text: string): Promise<LinePushResult> {
   return pushMessages(to, [{ type: "text", text }]);
 }
 
@@ -180,11 +184,34 @@ export async function notifyBookingConfirmed(opts: {
       flexRow("เวลา", time),
       flexRow("หักเครดิต", `${opts.totalCost.toLocaleString()} เครดิต`),
     ]),
-    footer: flexFooterButton(
-      "ชวนเพื่อนมาเล่น",
-      liffBookingInviteUri(opts),
-      "#D97706"
-    ),
+    footer: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: COLORS.success,
+          action: {
+            type: "uri",
+            label: "ดู QR เข้าสนาม",
+            uri: liffBookingAccessUri(opts.bookingId),
+          },
+        },
+        {
+          type: "button",
+          style: "primary",
+          color: "#D97706",
+          action: {
+            type: "uri",
+            label: "ชวนเพื่อนมาเล่น",
+            uri: liffBookingInviteUri(opts),
+          },
+        },
+      ],
+      paddingAll: "12px",
+    },
   });
 }
 

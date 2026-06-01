@@ -6,11 +6,15 @@ import { useSession, signIn } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { Loader2, Users } from "lucide-react";
 import { formatBookingSlotTh } from "@/lib/bookings/format-slot";
+import Link from "next/link";
 
 type InviteInfo = {
   token: string;
-  gameMode: string;
+  guestCount: number;
+  maxGuests: number;
+  slotsFull: boolean;
   booking: {
+    id: string;
     ref: string;
     courtName: string;
     hostName: string;
@@ -40,10 +44,18 @@ export default function InviteAcceptPage() {
 
   async function accept() {
     setAccepting(true);
+    setLoadError(null);
     try {
       const res = await fetch(`/api/invites/${token}/accept`, { method: "POST" });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error ?? "รับคำเชิญไม่สำเร็จ");
+      if (!res.ok) {
+        if (data.code === "GUEST_SLOTS_FULL") {
+          setInvite((prev) =>
+            prev ? { ...prev, slotsFull: true, guestCount: data.guestCount ?? prev.guestCount } : prev
+          );
+        }
+        throw new Error(data.error ?? "รับคำเชิญไม่สำเร็จ");
+      }
       setDone(true);
     } catch (e) {
       setLoadError(e instanceof Error ? e.message : "รับคำเชิญไม่สำเร็จ");
@@ -93,24 +105,40 @@ export default function InviteAcceptPage() {
           </p>
           <p>{invite.booking.courtName}</p>
           <p>{slot}</p>
-          <p className="text-xs text-muted-foreground capitalize">{invite.gameMode}</p>
+          <p className="text-xs text-muted-foreground">
+            แขก {invite.guestCount}/{invite.maxGuests}
+          </p>
         </div>
+
+        {invite.slotsFull && !done && (
+          <p className="text-sm text-amber-600 font-medium text-center">
+            คิวเชิญเต็มแล้ว — ติดต่อเจ้าของการจองหากต้องการเข้าร่วม
+          </p>
+        )}
+
+        {loadError && invite && (
+          <p className="text-sm text-destructive text-center">{loadError}</p>
+        )}
 
         {done ? (
           <>
             <p className="text-sm text-[color:var(--chart-2)] font-medium text-center">
-              รับคำเชิญแล้ว — คุณจะได้รับแจ้งเตือนหากมีการยกเลิก
+              รับคำเชิญแล้ว — คุณจะได้ QR เข้าสนามของตัวเอง
             </p>
-            <Button className="w-full" onClick={() => router.push("/dashboard/bookings")}>
+            <Link
+              href={`/dashboard/access?bookingId=${invite.booking.id}`}
+              className="flex w-full items-center justify-center rounded-md bg-primary text-primary-foreground h-10 text-sm font-medium"
+            >
+              ดู QR เข้าสนาม
+            </Link>
+            <Button variant="outline" className="w-full" onClick={() => router.push("/dashboard/bookings")}>
               ไปหน้าการจองของฉัน
             </Button>
           </>
-        ) : status === "unauthenticated" ? (
+        ) : invite.slotsFull ? null : status === "unauthenticated" ? (
           <Button
             className="w-full bg-[#06C755] hover:bg-[#05b04c] text-white"
-            onClick={() =>
-              signIn("line", { callbackUrl: `/invite/${token}` })
-            }
+            onClick={() => signIn("line", { callbackUrl: `/invite/${token}` })}
           >
             เข้าสู่ระบบด้วย LINE เพื่อรับคำเชิญ
           </Button>

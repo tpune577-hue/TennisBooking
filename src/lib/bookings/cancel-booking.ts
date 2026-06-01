@@ -6,6 +6,7 @@ import {
   notifyBookingCancelledGuest,
   notifyBookingCancelledOwner,
 } from "@/lib/notifications/line";
+import { revokeAllPassesForBooking } from "@/lib/access/passes";
 
 export async function cancelBooking(opts: {
   bookingId: string;
@@ -43,6 +44,8 @@ export async function cancelBooking(opts: {
       updatedAt: now,
     })
     .where(eq(schema.bookings.id, opts.bookingId));
+
+  await revokeAllPassesForBooking(opts.bookingId, "booking_cancelled");
 
   if (shouldRefund) {
     const [user] = await db

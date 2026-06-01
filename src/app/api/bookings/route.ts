@@ -4,6 +4,7 @@ import { getDb, schema } from "@/db";
 import { and, eq, ne, lt, gt, sql, desc } from "drizzle-orm";
 import { z } from "zod";
 import { notifyBookingConfirmed } from "@/lib/notifications/line";
+import { createPassesForConfirmedBooking } from "@/lib/access/passes";
 
 export const dynamic = "force-dynamic";
 
@@ -222,6 +223,8 @@ export async function POST(req: Request) {
       bookingId: booking.id,
       description: `จองสนาม ${bookingRef}`,
     });
+
+    await createPassesForConfirmedBooking(booking.id);
 
     const result = { booking, balanceAfter, lineUserId: user.lineUserId ?? null };
 

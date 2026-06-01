@@ -12,6 +12,7 @@ import { userRoleEnum, verificationTypeEnum } from "./enums";
 import { tiers } from "./tiers";
 import { creditTransactions } from "./credits";
 import { bookings } from "./bookings";
+import { bookingAccessPasses } from "./access";
 import { memberPackages } from "./packages";
 
 export const users = pgTable("users", {
@@ -48,5 +49,6 @@ export const usersRelations = relations(users, ({ one, many }) => ({
   tier: one(tiers, { fields: [users.tierId], references: [tiers.id] }),
   creditTransactions: many(creditTransactions),
   bookings: many(bookings),
+  accessPasses: many(bookingAccessPasses),
   memberPackages: many(memberPackages),
 }));
