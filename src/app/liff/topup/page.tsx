@@ -6,12 +6,12 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useCreditBalance } from "@/hooks/use-credit-balance";
 import { useLiff } from "@/lib/liff/provider";
+import { useLiffNavOverride } from "@/components/liff/liff-shell";
 import {
   AlertCircle,
   Check,
   CheckCircle2,
   ChevronLeft,
-  Coins,
   CreditCard,
   Loader2,
   QrCode,
@@ -66,8 +66,14 @@ export default function LiffTopupPage() {
   const { status } = useSession();
   const { isReady: liffReady } = useLiff();
   const { creditBalance, refresh: refreshCreditBalance } = useCreditBalance();
+  const { setHideNav } = useLiffNavOverride();
 
   const [screen, setScreen] = useState<Screen>("packages");
+
+  useEffect(() => {
+    setHideNav(screen !== "packages");
+    return () => setHideNav(false);
+  }, [screen, setHideNav]);
   const [selected, setSelected] = useState<number>(1); // default 1,000 THB
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -284,7 +290,7 @@ export default function LiffTopupPage() {
             <Button
               variant="outline"
               className="w-full h-12 text-base"
-              onClick={() => router.push("/dashboard/credits")}
+              onClick={() => router.push("/liff/me/credits")}
             >
               ดูประวัติเครดิต
             </Button>
@@ -344,7 +350,7 @@ export default function LiffTopupPage() {
 
   // ─── Normal screens ───────────────────────────────────────────────────────────
   return (
-    <>
+    <div className="flex flex-col flex-1 min-h-0">
       {/* Load Omise.js for credit card tokenization */}
       <Script
         src="https://cdn.omise.co/omise.js"
@@ -352,10 +358,9 @@ export default function LiffTopupPage() {
         onLoad={() => setOmiseReady(true)}
       />
 
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-card border-b border-border">
-        <div className="flex items-center gap-3 px-4 py-4">
-          {screen !== "packages" ? (
+      {screen !== "packages" && (
+        <div className="sticky top-0 z-10 bg-card border-b border-border">
+          <div className="flex items-center gap-3 px-4 py-4">
             <button
               onClick={() => {
                 pollingRef.current = false;
@@ -368,23 +373,12 @@ export default function LiffTopupPage() {
             >
               <ChevronLeft className="h-5 w-5" />
             </button>
-          ) : (
-            <button
-              onClick={() => router.back()}
-              className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-          )}
-          <div className="flex-1">
-            <h1 className="text-base font-bold">เติมเครดิต</h1>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            <Coins className="h-3.5 w-3.5 text-amber-400" />
-            <span className="font-semibold tabular-nums">{creditBalance}</span>
+            <div className="flex-1">
+              <h1 className="text-base font-bold">เติมเครดิต</h1>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Error banner */}
       {error && (
@@ -398,7 +392,8 @@ export default function LiffTopupPage() {
       {screen === "packages" && (
         <>
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            <p className="text-sm text-muted-foreground">
+            <h1 className="text-lg font-bold text-foreground">เติมเครดิต</h1>
+            <p className="text-sm text-muted-foreground -mt-2">
               เลือก Package ที่ต้องการ
             </p>
 
@@ -727,6 +722,6 @@ export default function LiffTopupPage() {
           </div>
         </>
       )}
-    </>
+    </div>
   );
 }
