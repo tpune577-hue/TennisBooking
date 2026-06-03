@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { LiffVerifyPanel } from "@/components/liff/liff-verify-panel";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -93,6 +94,7 @@ export function LiffPersonalInfoSection({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [verifyChannel, setVerifyChannel] = useState<"phone" | "email" | null>(null);
 
   const locks = data.fieldLocks;
   const { channels } = data.onboarding;
@@ -106,6 +108,14 @@ export function LiffPersonalInfoSection({
     setPhone(displayPhone(data.phone));
     setEmail(data.email ?? "");
   }, [data]);
+
+  useEffect(() => {
+    if (focus === "phone" && data.phone && !channels.phone.verified) {
+      setVerifyChannel("phone");
+    } else if (focus === "email" && data.email && !channels.email.verified) {
+      setVerifyChannel("email");
+    }
+  }, [focus, data.phone, data.email, channels.phone.verified, channels.email.verified]);
 
   useEffect(() => {
     if (!focus) return;
@@ -237,10 +247,10 @@ export function LiffPersonalInfoSection({
         locked={locks.phone}
         verified={channels.phone.verified}
         hint={
-          !channels.phone.verified && phone.trim()
-            ? "ยืนยันเบอร์ด้วยการเข้าสู่ระบบ OTP"
-            : !phone.trim()
-              ? "เพิ่มเบอร์แล้วบันทึก"
+          !channels.phone.verified && !data.phone
+            ? "เพิ่มเบอร์แล้วกดบันทึกก่อนยืนยัน"
+            : !channels.phone.verified && hasSaveableChanges
+              ? "บันทึกเบอร์ก่อนส่งรหัสยืนยัน"
               : undefined
         }
       >
@@ -255,13 +265,24 @@ export function LiffPersonalInfoSection({
           autoComplete="tel"
           className={focus === "phone" ? "ring-2 ring-primary/40" : undefined}
         />
-        {!channels.phone.verified && phone.trim() && !locks.phone ? (
-          <Link
-            href={`/sign-in?callbackUrl=${encodeURIComponent("/liff/me?focus=phone")}`}
-            className="text-xs font-medium text-primary underline underline-offset-2"
-          >
-            ไปยืนยันเบอร์ (OTP)
-          </Link>
+        {!channels.phone.verified && data.phone && !locks.phone ? (
+          verifyChannel === "phone" ? (
+            <LiffVerifyPanel
+              channel="phone"
+              onVerified={() => {
+                setVerifyChannel(null);
+                onSaved();
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              className="text-xs font-medium text-primary underline underline-offset-2"
+              onClick={() => setVerifyChannel("phone")}
+            >
+              ยืนยันเบอร์
+            </button>
+          )
         ) : null}
       </FieldRow>
 
@@ -271,10 +292,10 @@ export function LiffPersonalInfoSection({
         locked={locks.email}
         verified={channels.email.verified}
         hint={
-          !channels.email.verified && email.trim()
-            ? "ยืนยันอีเมลด้วยลิงก์จากหน้าเข้าสู่ระบบ"
-            : !email.trim()
-              ? "เพิ่มอีเมลแล้วบันทึก"
+          !channels.email.verified && !data.email
+            ? "เพิ่มอีเมลแล้วกดบันทึกก่อนยืนยัน"
+            : !channels.email.verified && hasSaveableChanges
+              ? "บันทึกอีเมลก่อนส่งรหัสยืนยัน"
               : undefined
         }
       >
@@ -288,13 +309,24 @@ export function LiffPersonalInfoSection({
           autoComplete="email"
           className={focus === "email" ? "ring-2 ring-primary/40" : undefined}
         />
-        {!channels.email.verified && email.trim() && !locks.email ? (
-          <Link
-            href={`/sign-in?callbackUrl=${encodeURIComponent("/liff/me?focus=email")}`}
-            className="text-xs font-medium text-primary underline underline-offset-2"
-          >
-            ไปยืนยันอีเมล
-          </Link>
+        {!channels.email.verified && data.email && !locks.email ? (
+          verifyChannel === "email" ? (
+            <LiffVerifyPanel
+              channel="email"
+              onVerified={() => {
+                setVerifyChannel(null);
+                onSaved();
+              }}
+            />
+          ) : (
+            <button
+              type="button"
+              className="text-xs font-medium text-primary underline underline-offset-2"
+              onClick={() => setVerifyChannel("email")}
+            >
+              ยืนยันอีเมล
+            </button>
+          )
         ) : null}
       </FieldRow>
 
