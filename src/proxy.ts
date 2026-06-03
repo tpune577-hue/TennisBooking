@@ -74,6 +74,7 @@ async function middleware(
     userId &&
     role === "customer" &&
     pathname !== "/complete-profile" &&
+    !pathname.startsWith("/liff") &&
     !pathname.startsWith("/api/")
   ) {
     const db = getDb();

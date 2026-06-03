@@ -1,13 +1,18 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LiffConnectionError } from "@/components/liff/liff-connection-error";
+import {
+  LiffPersonalInfoSection,
+  type MemberFieldLocks,
+} from "@/components/liff/liff-personal-info-section";
 import { useLiffRequireSession } from "@/hooks/use-liff-require-session";
+import type { MemberOnboardingStatus } from "@/lib/auth/member-readiness";
 import {
   ChevronRight,
   ExternalLink,
@@ -17,9 +22,16 @@ import {
 
 interface MeProfile {
   name: string;
+  firstName: string | null;
+  lastName: string | null;
+  phone: string | null;
+  email: string | null;
   avatarUrl: string | null;
   createdAt: string;
   tier: { name: string; discountPercent: number } | null;
+  onboarding: MemberOnboardingStatus;
+  fieldLocks: MemberFieldLocks;
+  lineDisplayName: string | null;
 }
 
 function formatMemberSince(iso: string) {
@@ -29,15 +41,33 @@ function formatMemberSince(iso: string) {
   }).format(new Date(iso));
 }
 
-export default function LiffMePage() {
-  const router = useRouter();
+type FocusParam = "profile" | "firstName" | "lastName" | "phone" | "email" | "line" | null;
+
+function parseFocus(raw: string | null): FocusParam {
+  if (
+    raw === "profile" ||
+    raw === "firstName" ||
+    raw === "lastName" ||
+    raw === "phone" ||
+    raw === "email" ||
+    raw === "line"
+  ) {
+    return raw;
+  }
+  return null;
+}
+
+function LiffMePageInner() {
+  const searchParams = useSearchParams();
+  const focus = parseFocus(searchParams.get("focus"));
   const { data: session, status } = useSession();
-  const { isReady: liffReady, isInClient, profile: liffProfile, error: liffError } = useLiff();
+  const { isReady: liffReady, isInClient, profile: liffProfile, error: liffError } =
+    useLiff();
   const [profile, setProfile] = useState<MeProfile | null>(null);
 
   useLiffRequireSession("/liff/me");
 
-  useEffect(() => {
+  const loadProfile = useCallback(() => {
     if (status !== "authenticated") return;
     void fetch("/api/me", { cache: "no-store" })
       .then((r) => (r.ok ? r.json() : null))
@@ -45,6 +75,10 @@ export default function LiffMePage() {
         if (data) setProfile(data as MeProfile);
       });
   }, [status]);
+
+  useEffect(() => {
+    loadProfile();
+  }, [loadProfile]);
 
   if (status === "loading" || (isInClient && !liffReady)) {
     return (
@@ -79,7 +113,6 @@ export default function LiffMePage() {
       label: "เปิดแดชบอร์ดบนเว็บ",
       description: "สำหรับจัดการบัญชีบนคอมพิวเตอร์",
       icon: ExternalLink,
-      external: false,
     },
   ];
 
@@ -108,11 +141,36 @@ export default function LiffMePage() {
         )}
       </div>
 
+      {profile ? (
+        <LiffPersonalInfoSection
+          data={{
+            firstName: profile.firstName,
+            lastName: profile.lastName,
+            phone: profile.phone,
+            email: profile.email,
+            lineDisplayName: profile.lineDisplayName,
+            fieldLocks: profile.fieldLocks,
+            onboarding: profile.onboarding,
+          }}
+          focus={focus}
+          lineNameFromLiff={liffProfile?.displayName}
+          onSaved={loadProfile}
+        />
+      ) : (
+        <div className="rounded-2xl border border-border bg-card p-4 flex justify-center">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
+      )}
+
       <div className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
         {menuItems.map((item) => {
           const Icon = item.icon;
-          const inner = (
-            <>
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors"
+            >
               <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted">
                 <Icon className="h-5 w-5 text-muted-foreground" />
               </div>
@@ -121,19 +179,24 @@ export default function LiffMePage() {
                 <p className="text-xs text-muted-foreground">{item.description}</p>
               </div>
               <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
-            </>
-          );
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 px-4 py-3.5 hover:bg-muted/50 transition-colors"
-            >
-              {inner}
             </Link>
           );
         })}
       </div>
     </div>
+  );
+}
+
+export default function LiffMePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      }
+    >
+      <LiffMePageInner />
+    </Suspense>
   );
 }

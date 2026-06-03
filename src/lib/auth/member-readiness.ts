@@ -88,6 +88,17 @@ export function assertMemberCanBook(
   return { ok: true };
 }
 
+/** LIFF Me: fields become read-only after the matching verification / profile step. */
+export function getMemberFieldLocks(user: MemberReadinessInput) {
+  return {
+    firstName: isProfileComplete(user),
+    lastName: isProfileComplete(user),
+    phone: user.isPhoneVerified,
+    email: user.isEmailVerified,
+    lineName: Boolean(user.lineUserId),
+  };
+}
+
 export function loadReadinessColumns() {
   return {
     role: true,

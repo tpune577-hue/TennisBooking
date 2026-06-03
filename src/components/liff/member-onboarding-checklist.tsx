@@ -72,10 +72,10 @@ export function MemberOnboardingChecklist({ onboarding }: Props) {
 
       {!profileComplete ? (
         <Link
-          href="/complete-profile"
+          href="/liff/me?focus=profile"
           className="block text-center text-sm font-medium text-primary underline underline-offset-2"
         >
-          กรอกข้อมูลสมาชิก
+          กรอกข้อมูลที่แท็บ ฉัน
         </Link>
       ) : null}
 
@@ -87,10 +87,10 @@ export function MemberOnboardingChecklist({ onboarding }: Props) {
             channels.phone.verified
               ? "ยืนยันแล้ว"
               : channels.phone.linked
-                ? "ส่ง OTP เพื่อยืนยัน (เข้าสู่ระบบด้วยเบอร์)"
-                : "เพิ่มเบอร์ในข้อมูลสมาชิก"
+                ? "แตะเพื่อยืนยันเบอร์ที่แท็บ ฉัน"
+                : "แตะเพื่อเพิ่มเบอร์ที่แท็บ ฉัน"
           }
-          href={!channels.phone.verified ? "/sign-in" : undefined}
+          href={!channels.phone.verified ? "/liff/me?focus=phone" : undefined}
         />
         <ChannelRow
           label="อีเมล"
@@ -99,10 +99,10 @@ export function MemberOnboardingChecklist({ onboarding }: Props) {
             channels.email.verified
               ? "ยืนยันแล้ว"
               : channels.email.linked
-                ? "ส่งลิงก์ยืนยันจากหน้าเข้าสู่ระบบ"
-                : "เพิ่มอีเมลในข้อมูลสมาชิก"
+                ? "แตะเพื่อยืนยันอีเมลที่แท็บ ฉัน"
+                : "แตะเพื่อเพิ่มอีเมลที่แท็บ ฉัน"
           }
-          href={!channels.email.verified ? "/sign-in" : undefined}
+          href={!channels.email.verified ? "/liff/me?focus=email" : undefined}
         />
         <ChannelRow
           label="LINE"
@@ -110,8 +110,9 @@ export function MemberOnboardingChecklist({ onboarding }: Props) {
           hint={
             channels.line.verified
               ? "ผูกบัญชีแล้ว"
-              : "เปิดในแอป LINE หรือเข้าสู่ระบบด้วย LINE"
+              : "แตะเพื่อดู/ผูก LINE ที่แท็บ ฉัน"
           }
+          href={!channels.line.verified ? "/liff/me?focus=line" : undefined}
         />
       </div>
     </div>

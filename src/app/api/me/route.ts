@@ -2,6 +2,7 @@ import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/db";
 import { eq } from "drizzle-orm";
 import {
+  getMemberFieldLocks,
   getMemberOnboardingStatus,
   isProfileComplete,
   loadReadinessColumns,
@@ -52,5 +53,7 @@ export async function GET() {
       : null,
     profileComplete: isProfileComplete(user),
     onboarding,
+    fieldLocks: getMemberFieldLocks(user),
+    lineDisplayName: user.lineUserId ? user.name : null,
   });
 }
