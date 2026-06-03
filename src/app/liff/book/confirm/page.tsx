@@ -147,7 +147,8 @@ function ConfirmContent() {
         creditBalance={creditBalance}
       />
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-6">
+      <div className="flex-1 overflow-y-auto overscroll-contain">
+        <div className="mx-auto w-full max-w-md px-4 py-4 pb-6 space-y-4">
         <BookingSummary
           rows={summaryRows}
           totalValue={
@@ -156,7 +157,7 @@ function ConfirmContent() {
           note="หักจากเครดิตคงเหลือ · เติมได้ที่หน้าเติมเครดิต"
           action={
             <Button
-              className="w-full h-12 rounded-sm btn-brand text-sm font-semibold tracking-wide uppercase"
+              className="w-full h-12 rounded-sm btn-brand text-sm font-semibold"
               onClick={handleConfirm}
               disabled={balanceLoading || !hasEnoughCredits || confirming}
             >
@@ -174,19 +175,19 @@ function ConfirmContent() {
 
         {(courtCost > 0 || coachCost > 0) && (
           <BookingPanel>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-oak-deep)] mb-3">
+            <p className="text-sm font-semibold text-[var(--brand-oak-deep)] mb-3">
               รายละเอียดค่าใช้จ่าย
             </p>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between gap-3">
-                <span className="text-muted-foreground">ค่าสนาม</span>
+                <span className="text-booking-subtle">ค่าสนาม</span>
                 <span className="font-semibold tabular-nums">
                   {courtCost.toLocaleString()} เครดิต
                 </span>
               </div>
               {coachCost > 0 && coachName ? (
                 <div className="flex justify-between gap-3">
-                  <span className="text-muted-foreground">ค่าโค้ช</span>
+                  <span className="text-booking-subtle">ค่าโค้ช</span>
                   <span className="font-semibold tabular-nums">
                     {coachCost.toLocaleString()} เครดิต
                   </span>
@@ -218,7 +219,7 @@ function ConfirmContent() {
             >
               {hasEnoughCredits ? "เครดิตเพียงพอ" : "เครดิตไม่เพียงพอ"}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+            <p className="text-sm text-booking-subtle mt-0.5 leading-relaxed">
               {hasEnoughCredits
                 ? `หลังยืนยันเหลือ ${remaining.toLocaleString()} เครดิต`
                 : `ขาดอีก ${(totalCost - creditBalance).toLocaleString()} เครดิต · ไปหน้าเติมเครดิต`}
@@ -229,16 +230,17 @@ function ConfirmContent() {
         {!hasEnoughCredits ? (
           <Button
             variant="outline"
-            className="w-full h-11 rounded-sm border-primary text-primary hover:bg-primary/5"
+            className="w-full min-h-12 rounded-sm border-primary text-primary hover:bg-primary/5"
             onClick={() => router.push("/liff/topup")}
           >
             เติมเครดิต
           </Button>
         ) : null}
 
-        <p className="text-xs text-muted-foreground text-center leading-relaxed pb-2">
+        <p className="text-sm text-booking-subtle text-center leading-relaxed pb-2 text-pretty">
           ยกเลิกได้ฟรีก่อน 24 ชั่วโมง · เครดิตคืนทันที
         </p>
+        </div>
       </div>
     </div>
   );

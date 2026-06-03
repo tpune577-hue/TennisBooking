@@ -62,6 +62,8 @@
   --brand-cta: #86602f;
   --brand-cta-deep: #6b4c23;
   --brand-ink: #2a2620;
+  /* Booking surfaces: readable secondary text on paper (≥4.5:1 on #faf6ef) */
+  --booking-subtle: oklch(0.42 0.024 78);
 
   /* Canvas */
   --background: #ffffff;
@@ -176,5 +178,23 @@
   }
   .btn-brand:hover:not(:disabled) {
     background-color: var(--brand-cta-deep);
+  }
+  .btn-brand:focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
+  }
+  .text-booking-subtle {
+    color: var(--booking-subtle);
+  }
+  .booking-focus-ring {
+    @apply outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .motion-safe-transition {
+      transition-duration: 0.01ms !important;
+    }
+    .motion-safe-active:active {
+      transform: none !important;
+    }
   }
 }

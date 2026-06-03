@@ -25,7 +25,7 @@ export function LiffBookingHeader({
     backHref != null ? (
       <Link
         href={backHref}
-        className="p-1.5 -ml-1 rounded-sm hover:bg-[color-mix(in_oklch,var(--brand-paper),var(--foreground)_6%)] transition-colors"
+        className="booking-focus-ring -ml-1 min-h-11 min-w-11 flex items-center justify-center rounded-sm hover:bg-[color-mix(in_oklch,var(--brand-paper),var(--foreground)_6%)] motion-safe-transition transition-colors"
         aria-label="กลับ"
       >
         <ChevronLeft className="h-5 w-5" />
@@ -34,7 +34,7 @@ export function LiffBookingHeader({
       <button
         type="button"
         onClick={onBack}
-        className="p-1.5 -ml-1 rounded-sm hover:bg-[color-mix(in_oklch,var(--brand-paper),var(--foreground)_6%)] transition-colors"
+        className="booking-focus-ring -ml-1 min-h-11 min-w-11 flex items-center justify-center rounded-sm hover:bg-[color-mix(in_oklch,var(--brand-paper),var(--foreground)_6%)] motion-safe-transition transition-colors"
         aria-label="กลับ"
       >
         <ChevronLeft className="h-5 w-5" />
@@ -50,12 +50,12 @@ export function LiffBookingHeader({
           {title}
         </h1>
         {subtitle ? (
-          <p className="text-xs text-muted-foreground mt-0.5">{subtitle}</p>
+          <p className="text-sm text-booking-subtle mt-0.5">{subtitle}</p>
         ) : null}
       </div>
       {creditBalance != null ? (
         <div className="shrink-0 text-right min-w-[4.5rem]">
-          <p className="text-xs font-medium text-muted-foreground">เครดิต</p>
+          <p className="text-sm font-medium text-booking-subtle">เครดิต</p>
           <p className="text-sm font-semibold tabular-nums text-foreground leading-tight">
             {creditBalance.toLocaleString()}
           </p>
@@ -89,9 +89,18 @@ export function BookingIntro({
   );
 }
 
-export function BookingForm({ children }: { children: React.ReactNode }) {
+export function BookingForm({
+  children,
+  "aria-busy": ariaBusy,
+}: {
+  children: React.ReactNode;
+  "aria-busy"?: boolean;
+}) {
   return (
-    <div className="rounded-sm border border-border bg-card divide-y divide-border shadow-[0_1px_2px_oklch(0.22_0.02_75_/_0.05)]">
+    <div
+      className="rounded-sm border border-border bg-card divide-y divide-border shadow-[0_1px_2px_oklch(0.22_0.02_75_/_0.05)]"
+      aria-busy={ariaBusy}
+    >
       {children}
     </div>
   );
@@ -127,7 +136,7 @@ export function BookingEmptyState({
         />
       ) : null}
       <p className="text-sm font-semibold text-foreground">{title}</p>
-      <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed max-w-[28rem] mx-auto text-pretty">
+      <p className="text-sm text-booking-subtle mt-1.5 leading-relaxed max-w-[28rem] mx-auto text-pretty">
         {description}
       </p>
       {action ? <div className="mt-4 flex justify-center gap-2">{action}</div> : null}
@@ -141,7 +150,7 @@ export function BookingRangeTip({ onDismiss }: { onDismiss: () => void }) {
       className="rounded-sm border border-border bg-[var(--brand-paper)] px-3 py-3 flex gap-2 items-start"
       role="note"
     >
-      <p className="text-sm text-muted-foreground flex-1 leading-relaxed text-pretty">
+      <p className="text-sm text-booking-subtle flex-1 leading-relaxed text-pretty">
         <span className="font-medium text-foreground">เลือกเวลาเป็นช่วง</span>
         {" · "}
         แตะชั่วโมงเริ่ม แล้วแตะชั่วโมงสิ้นสุดของรอบ
@@ -149,7 +158,7 @@ export function BookingRangeTip({ onDismiss }: { onDismiss: () => void }) {
       <button
         type="button"
         onClick={onDismiss}
-        className="shrink-0 p-1 -mr-0.5 rounded-sm text-muted-foreground hover:text-foreground min-h-11 min-w-11 flex items-center justify-center"
+        className="booking-focus-ring shrink-0 -mr-0.5 rounded-sm text-booking-subtle hover:text-foreground min-h-11 min-w-11 flex items-center justify-center motion-safe-transition transition-colors"
         aria-label="ปิดคำแนะนำ"
       >
         <X className="h-4 w-4" />
@@ -212,6 +221,7 @@ export function BookingChip({
   children,
   className,
   variant = "default",
+  "aria-label": ariaLabel,
 }: {
   pressed?: boolean;
   disabled?: boolean;
@@ -219,16 +229,18 @@ export function BookingChip({
   children: React.ReactNode;
   className?: string;
   variant?: "default" | "date" | "slot";
+  "aria-label"?: string;
 }) {
   return (
     <button
       type="button"
       disabled={disabled}
       aria-pressed={pressed}
+      aria-label={ariaLabel}
       onClick={onClick}
       className={cn(
-        "font-medium transition-[background,border-color,color,opacity] duration-200 ease-out",
-        "border rounded-sm text-left",
+        "booking-focus-ring font-medium motion-safe-transition transition-[background,border-color,color,opacity] duration-200 ease-out",
+        "border rounded-sm text-left motion-safe-active active:scale-[0.98]",
         variant === "date" &&
           "min-w-[64px] shrink-0 snap-start flex flex-col items-center gap-1 py-3 px-2 text-center",
         variant === "slot" &&
@@ -238,7 +250,7 @@ export function BookingChip({
           "opacity-35 cursor-not-allowed line-through border-border/60 bg-muted/20 text-muted-foreground",
         !disabled &&
           !pressed &&
-          "border-border bg-[var(--brand-paper)] text-muted-foreground hover:border-[var(--brand-oak)] hover:text-foreground",
+          "border-border bg-[var(--brand-paper)] text-booking-subtle hover:border-[var(--brand-oak)] hover:text-foreground",
         !disabled &&
           pressed &&
           "border-primary bg-primary text-primary-foreground",
@@ -313,7 +325,7 @@ export function BookingSummary({
       </div>
       {action ? <div className="mt-5">{action}</div> : null}
       {note ? (
-        <p className="text-xs text-[oklch(0.62_0.02_85)] text-center mt-3 leading-relaxed">
+        <p className="text-sm text-[oklch(0.72_0.02_85)] text-center mt-3 leading-relaxed text-pretty">
           {note}
         </p>
       ) : null}
@@ -396,10 +408,10 @@ export function BookingTypeToggle({
             aria-pressed={active}
             onClick={() => onChange(opt.id)}
             className={cn(
-              "flex-1 min-h-11 px-3 py-2 text-sm font-medium rounded-sm transition-colors duration-200",
+              "booking-focus-ring flex-1 min-h-11 px-3 py-2 text-sm font-medium rounded-sm motion-safe-transition transition-colors duration-200",
               active
                 ? "bg-card text-foreground shadow-sm border border-border"
-                : "text-muted-foreground hover:text-foreground"
+                : "text-booking-subtle hover:text-foreground"
             )}
           >
             {opt.label}
@@ -417,6 +429,7 @@ export function BookingStickyFooter({
   hasEnoughCredits,
   creditShortfall,
   nextStep,
+  balanceLoading,
   onConfirm,
   onTopUp,
 }: {
@@ -426,6 +439,7 @@ export function BookingStickyFooter({
   hasEnoughCredits: boolean;
   creditShortfall: number;
   nextStep?: string | null;
+  balanceLoading?: boolean;
   onConfirm: () => void;
   onTopUp: () => void;
 }) {
@@ -460,14 +474,14 @@ export function BookingStickyFooter({
 
       {!canProceed && nextStep ? (
         <p
-          className="text-sm text-muted-foreground text-center leading-relaxed px-1"
+          className="text-sm text-booking-subtle text-center leading-relaxed px-1"
           role="status"
         >
           {nextStep}
         </p>
       ) : null}
 
-      {canProceed && !hasEnoughCredits ? (
+      {canProceed && !hasEnoughCredits && !balanceLoading ? (
         <div className="rounded-sm border border-destructive/30 bg-destructive/8 px-3 py-2.5 flex items-center justify-between gap-3">
           <p className="text-sm text-destructive font-medium">
             เครดิตไม่พอ · ขาด {creditShortfall.toLocaleString()} เครดิต
@@ -475,7 +489,7 @@ export function BookingStickyFooter({
           <button
             type="button"
             onClick={onTopUp}
-            className="text-sm font-semibold text-primary shrink-0 underline-offset-2 hover:underline"
+            className="booking-focus-ring text-sm font-semibold text-primary shrink-0 min-h-11 px-2 underline-offset-2 hover:underline"
           >
             เติมเครดิต
           </button>
@@ -485,19 +499,26 @@ export function BookingStickyFooter({
       <button
         type="button"
         onClick={onConfirm}
-        disabled={!canProceed || !hasEnoughCredits}
+        disabled={!canProceed || !hasEnoughCredits || balanceLoading}
         className={cn(
-          "w-full min-h-12 rounded-sm text-sm font-semibold tracking-wide uppercase transition-colors",
-          canProceed && hasEnoughCredits
+          "booking-focus-ring w-full min-h-12 rounded-sm text-sm font-semibold motion-safe-transition transition-colors",
+          canProceed && hasEnoughCredits && !balanceLoading
             ? "btn-brand"
-            : "bg-muted text-muted-foreground cursor-not-allowed"
+            : "bg-muted text-booking-subtle cursor-not-allowed"
         )}
       >
-        {canProceed && hasEnoughCredits
-          ? `ไปยืนยันการจอง · ${totalCost.toLocaleString()} เครดิต`
-          : canProceed
-            ? "ไปเติมเครดิต"
-            : "เลือกวัน คอร์ต และเวลาให้ครบ"}
+        {balanceLoading ? (
+          <span className="inline-flex items-center justify-center gap-2">
+            <span className="h-4 w-4 rounded-full border-2 border-current border-t-transparent animate-spin motion-reduce:animate-none" />
+            กำลังตรวจสอบเครดิต...
+          </span>
+        ) : canProceed && hasEnoughCredits ? (
+          `ไปยืนยันการจอง · ${totalCost.toLocaleString()} เครดิต`
+        ) : canProceed ? (
+          "ไปเติมเครดิต"
+        ) : (
+          "เลือกวัน คอร์ต และเวลาให้ครบ"
+        )}
       </button>
       </div>
     </div>
@@ -510,7 +531,7 @@ export function BookingDateSkeleton() {
       {Array.from({ length: 7 }).map((_, i) => (
         <div
           key={i}
-          className="min-w-[62px] h-[72px] rounded-sm bg-muted animate-pulse"
+          className="min-w-[62px] h-[72px] rounded-sm bg-muted animate-pulse motion-reduce:animate-none"
         />
       ))}
     </div>
@@ -521,7 +542,10 @@ export function BookingSlotSkeleton() {
   return (
     <div className="grid grid-cols-4 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))]">
       {Array.from({ length: 12 }).map((_, i) => (
-        <div key={i} className="h-11 rounded-sm bg-muted animate-pulse" />
+        <div
+          key={i}
+          className="h-11 rounded-sm bg-muted animate-pulse motion-reduce:animate-none"
+        />
       ))}
     </div>
   );

@@ -353,7 +353,7 @@ function BookPageContent() {
           <BookingRangeTip onDismiss={dismissRangeTip} />
         ) : null}
 
-        <BookingForm>
+        <BookingForm aria-busy={loadingSlots || loadingCourts}>
           <BookingFormSection>
           <BookingField step="1" label="เลือกวัน">
             {loadingCourts ? (
@@ -403,7 +403,7 @@ function BookPageContent() {
                 {Array.from({ length: 4 }).map((_, i) => (
                   <div
                     key={i}
-                    className="h-11 min-w-[120px] flex-1 rounded-sm bg-muted animate-pulse"
+                    className="h-11 min-w-[120px] flex-1 rounded-sm bg-muted animate-pulse motion-reduce:animate-none"
                   />
                 ))}
               </div>
@@ -425,7 +425,7 @@ function BookPageContent() {
                     <button
                       type="button"
                       onClick={loadCourts}
-                      className="text-sm font-semibold text-primary underline-offset-2 hover:underline min-h-11 px-3"
+                      className="booking-focus-ring text-sm font-semibold text-primary underline-offset-2 hover:underline min-h-11 px-3 rounded-sm"
                     >
                       ลองโหลดอีกครั้ง
                     </button>
@@ -452,7 +452,7 @@ function BookPageContent() {
               </div>
             )}
             {selectedCourt ? (
-              <p className="text-sm text-muted-foreground flex items-center gap-1 mt-2">
+              <p className="text-sm text-booking-subtle flex items-center gap-1.5 mt-2">
                 <Clock className="h-3.5 w-3.5 shrink-0" aria-hidden />
                 เปิด {selectedCourt.openTime} – {selectedCourt.closeTime}
                 {selectedCourt.pricing ? (
@@ -517,6 +517,11 @@ function BookPageContent() {
                           variant="slot"
                           disabled={!slot.available}
                           pressed={inRange && !peakSelected}
+                          aria-label={
+                            slot.available
+                              ? `${String(slot.hour).padStart(2, "0")}:00`
+                              : `${String(slot.hour).padStart(2, "0")}:00 ไม่ว่าง`
+                          }
                           onClick={() => handleSlotClick(slot)}
                           className={cn(
                             peakSelected &&
@@ -537,7 +542,7 @@ function BookPageContent() {
                     })}
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm text-booking-subtle">
                     <span className="flex items-center gap-2">
                       <span className="h-3.5 w-3.5 rounded-sm bg-primary shrink-0" />
                       เลือกแล้ว
@@ -547,7 +552,7 @@ function BookPageContent() {
                       ช่วงราคาสูง
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="text-sm text-booking-subtle text-pretty">
                     ช่วงราคาสูงใช้เครดิตมากกว่าช่วงปกติ
                   </p>
 
@@ -555,7 +560,7 @@ function BookPageContent() {
                     <button
                       type="button"
                       onClick={() => setPendingStart(null)}
-                      className="mt-3 text-sm text-muted-foreground underline w-full text-center min-h-11"
+                      className="booking-focus-ring mt-3 text-sm text-booking-subtle underline w-full text-center min-h-11 rounded-sm"
                     >
                       ยกเลิกการเลือกเวลา
                     </button>
@@ -576,7 +581,7 @@ function BookPageContent() {
                     {Array.from({ length: 2 }).map((_, i) => (
                       <div
                         key={i}
-                        className="h-16 rounded-sm bg-muted animate-pulse"
+                        className="h-16 rounded-sm bg-muted animate-pulse motion-reduce:animate-none"
                       />
                     ))}
                   </div>
@@ -589,7 +594,7 @@ function BookPageContent() {
                       <button
                         type="button"
                         onClick={() => setBookingTypeAndUrl("court_only")}
-                        className="text-sm font-semibold text-primary underline-offset-2 hover:underline min-h-11 px-3"
+                        className="booking-focus-ring text-sm font-semibold text-primary underline-offset-2 hover:underline min-h-11 px-3 rounded-sm"
                       >
                         จองสนามอย่างเดียวแทน
                       </button>
@@ -610,8 +615,10 @@ function BookPageContent() {
                           key={coach.id}
                           type="button"
                           onClick={() => setSelectedCoach(coach)}
+                          aria-pressed={isActive}
+                          aria-label={`เลือกโค้ช ${coach.name}`}
                           className={cn(
-                            "w-full flex items-center gap-3 px-4 py-3 min-h-11 rounded-sm border transition-colors text-left",
+                            "booking-focus-ring w-full flex items-center gap-3 px-4 py-3 min-h-12 rounded-sm border text-left motion-safe-transition transition-colors motion-safe-active active:scale-[0.99]",
                             isActive
                               ? "border-primary bg-[color-mix(in_oklch,var(--brand-paper),var(--primary)_8%)]"
                               : "border-border bg-[var(--brand-paper)] hover:border-[var(--brand-oak)]"
@@ -641,12 +648,12 @@ function BookPageContent() {
                               {coach.name}
                             </p>
                             {coach.bio ? (
-                              <p className="text-sm text-muted-foreground truncate">
+                              <p className="text-sm text-booking-subtle truncate">
                                 {coach.bio}
                               </p>
                             ) : null}
                           </div>
-                          <p className="text-sm font-semibold tabular-nums shrink-0 text-muted-foreground">
+                          <p className="text-sm font-semibold tabular-nums shrink-0 text-booking-subtle">
                             +{coach.pricePerHour} เครดิต/ชม.
                           </p>
                         </button>
@@ -659,7 +666,7 @@ function BookPageContent() {
           )}
         </BookingForm>
 
-        <p className="text-sm text-muted-foreground leading-relaxed text-pretty">
+        <p className="text-sm text-booking-subtle leading-relaxed text-pretty">
           <span className="font-medium text-foreground">
             ยกเลิกฟรีก่อน 24 ชั่วโมง
           </span>
@@ -676,6 +683,7 @@ function BookPageContent() {
         hasEnoughCredits={hasEnoughCredits}
         creditShortfall={creditShortfall}
         nextStep={nextStep}
+        balanceLoading={balanceLoading}
         onConfirm={handleConfirm}
         onTopUp={() => router.push("/liff/topup")}
       />
