@@ -39,7 +39,8 @@ export function LiffBookingHeader({
     ) : null;
 
   return (
-    <header className="shrink-0 border-b border-border bg-brand-header backdrop-blur-md px-4 py-3.5 flex items-center gap-3">
+    <header className="shrink-0 border-b border-border bg-brand-header backdrop-blur-md">
+      <div className="mx-auto w-full max-w-md px-4 py-3.5 flex items-center gap-3">
       {backControl}
       <div className="flex-1 min-w-0">
         <h1 className="font-heading text-base font-medium text-foreground leading-tight">
@@ -50,15 +51,14 @@ export function LiffBookingHeader({
         ) : null}
       </div>
       {creditBalance != null ? (
-        <div className="shrink-0 text-right">
-          <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--brand-oak-deep)]">
-            เครดิต
-          </p>
-          <p className="text-sm font-semibold tabular-nums text-foreground">
+        <div className="shrink-0 text-right min-w-[4.5rem]">
+          <p className="text-xs font-medium text-muted-foreground">เครดิต</p>
+          <p className="text-sm font-semibold tabular-nums text-foreground leading-tight">
             {creditBalance.toLocaleString()}
           </p>
         </div>
       ) : null}
+      </div>
     </header>
   );
 }
@@ -151,7 +151,7 @@ export function BookingChip({
         "font-medium transition-[background,border-color,color,opacity] duration-200 ease-out",
         "border rounded-sm text-left",
         variant === "date" &&
-          "min-w-[62px] flex flex-col items-center gap-0.5 py-2.5 px-2 text-center",
+          "min-w-[64px] shrink-0 snap-start flex flex-col items-center gap-1 py-3 px-2 text-center",
         variant === "slot" &&
           "min-h-11 py-2.5 text-center text-sm tabular-nums",
         variant === "default" && "py-2.5 px-4 text-sm",
@@ -350,11 +350,14 @@ export function BookingStickyFooter({
 }) {
   const showTotal = canProceed && totalCost > 0;
 
+  const showSummary = summaryLines.length >= 2;
+
   return (
-    <div className="sticky bottom-0 z-20 border-t border-border bg-brand-header backdrop-blur-md px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))] space-y-3">
-      {summaryLines.length > 0 ? (
+    <div className="sticky bottom-0 z-20 shrink-0 border-t border-border bg-brand-header/95 backdrop-blur-md">
+      <div className="mx-auto w-full max-w-md px-4 pt-3 pb-[max(12px,env(safe-area-inset-bottom))] flex flex-col gap-3">
+      {showSummary ? (
         <div
-          className="rounded-sm bg-[var(--brand-ink)] text-white px-4 py-3 text-sm space-y-1.5"
+          className="rounded-sm bg-[var(--brand-ink)] text-white px-4 py-3.5 text-sm space-y-2"
           aria-live="polite"
         >
           {summaryLines.map((line) => (
@@ -406,6 +409,7 @@ export function BookingStickyFooter({
             ? "เติมเครดิตก่อนจอง"
             : "เลือกให้ครบก่อน"}
       </button>
+      </div>
     </div>
   );
 }
@@ -425,7 +429,7 @@ export function BookingDateSkeleton() {
 
 export function BookingSlotSkeleton() {
   return (
-    <div className="grid grid-cols-[repeat(auto-fill,minmax(86px,1fr))] gap-2">
+    <div className="grid grid-cols-4 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))]">
       {Array.from({ length: 12 }).map((_, i) => (
         <div key={i} className="h-11 rounded-sm bg-muted animate-pulse" />
       ))}

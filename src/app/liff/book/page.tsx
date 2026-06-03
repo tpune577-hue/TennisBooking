@@ -14,7 +14,8 @@ import {
   BookingChip,
   BookingDateSkeleton,
   BookingField,
-  BookingPanel,
+  BookingForm,
+  BookingFormSection,
   BookingSlotSkeleton,
   BookingStickyFooter,
   BookingTypeToggle,
@@ -287,18 +288,20 @@ function BookPageContent() {
         creditBalance={creditBalance}
       />
 
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-4">
+      <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+        <div className="mx-auto w-full max-w-md px-4 pt-5 pb-[calc(11.5rem+env(safe-area-inset-bottom))] flex flex-col gap-6">
         <BookingTypeToggle
           value={bookingType}
           onChange={setBookingTypeAndUrl}
         />
 
-        <BookingPanel className="space-y-5">
+        <BookingForm>
+          <BookingFormSection>
           <BookingField step="1" label="เลือกวัน">
             {loadingCourts ? (
               <BookingDateSkeleton />
             ) : (
-              <div className="flex gap-2 overflow-x-auto pb-0.5 -mx-0.5">
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1 snap-x snap-mandatory scroll-smooth [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 {days.map((day, i) => {
                   const isToday = i === 0;
                   const isActive =
@@ -333,7 +336,9 @@ function BookPageContent() {
               </div>
             )}
           </BookingField>
+          </BookingFormSection>
 
+          <BookingFormSection>
           <BookingField step="2" label="เลือกคอร์ต">
             {loadingCourts ? (
               <div className="flex flex-wrap gap-2">
@@ -381,8 +386,10 @@ function BookPageContent() {
               </p>
             ) : null}
           </BookingField>
+          </BookingFormSection>
 
           {selectedCourt ? (
+            <BookingFormSection className="py-6">
             <BookingField step="3" label="เลือกเวลา">
               {loadingSlots ? (
                 <BookingSlotSkeleton />
@@ -394,13 +401,13 @@ function BookPageContent() {
                 <>
                   {timeHint ? (
                     <p
-                      className="text-sm text-primary mb-2 font-medium"
+                      className="text-sm text-primary font-medium -mt-1"
                       role="status"
                     >
                       {timeHint}
                     </p>
                   ) : null}
-                  <div className="grid grid-cols-[repeat(auto-fill,minmax(86px,1fr))] gap-2">
+                  <div className="grid grid-cols-4 gap-2 sm:grid-cols-[repeat(auto-fill,minmax(5.5rem,1fr))]">
                     {slots.map((slot) => {
                       const inRange = isInRange(slot.hour);
                       const rangeComplete =
@@ -433,17 +440,19 @@ function BookPageContent() {
                     })}
                   </div>
 
-                  <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-3.5 w-3.5 rounded-sm bg-primary inline-block" />
+                  <div className="flex flex-wrap items-center gap-x-5 gap-y-2 pt-1 text-sm text-muted-foreground">
+                    <span className="flex items-center gap-2">
+                      <span className="h-3.5 w-3.5 rounded-sm bg-primary shrink-0" />
                       เลือกแล้ว
                     </span>
-                    <span className="flex items-center gap-1.5">
-                      <span className="h-3.5 w-3.5 rounded-sm bg-[var(--brand-oak-deep)] inline-block" />
+                    <span className="flex items-center gap-2">
+                      <span className="h-3.5 w-3.5 rounded-sm bg-[var(--brand-oak-deep)] shrink-0" />
                       ช่วง Peak
                     </span>
-                    <span>ช่วง Peak คิดเครดิตสูงกว่า</span>
                   </div>
+                  <p className="text-sm text-muted-foreground">
+                    ช่วง Peak คิดเครดิตสูงกว่า
+                  </p>
 
                   {pendingStart !== null ? (
                     <button
@@ -457,13 +466,13 @@ function BookPageContent() {
                 </>
               )}
             </BookingField>
+            </BookingFormSection>
           ) : null}
-        </BookingPanel>
 
         {bookingType === "court_with_coach" &&
           startHour !== null &&
           endHour !== null && (
-            <BookingPanel>
+            <BookingFormSection>
               <BookingField step="4" label="เลือกโค้ช">
                 {loadingCoaches ? (
                   <div className="space-y-2">
@@ -479,7 +488,7 @@ function BookPageContent() {
                     ไม่มีโค้ชว่างในขณะนี้
                   </p>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="flex flex-col gap-3">
                     {coaches.map((coach) => {
                       const isActive = selectedCoach?.id === coach.id;
                       const initials = coach.name
@@ -538,16 +547,18 @@ function BookPageContent() {
                   </div>
                 )}
               </BookingField>
-            </BookingPanel>
+            </BookingFormSection>
           )}
+        </BookingForm>
 
-        <p className="text-sm text-muted-foreground leading-relaxed px-0.5">
+        <p className="text-sm text-muted-foreground leading-relaxed text-pretty">
           <span className="font-medium text-foreground">
             ยกเลิกฟรีก่อน 24 ชั่วโมง
           </span>
           {" · "}
           เครดิตคืนเข้าบัญชีทันที
         </p>
+        </div>
       </div>
 
       <BookingStickyFooter
