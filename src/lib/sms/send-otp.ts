@@ -1,31 +1,24 @@
 import twilio from "twilio";
+import { canSendSms, isVerificationLogOnlyMode } from "@/lib/auth/verification-delivery";
 
-/** Log OTP to server logs only — no SMS charge. Set AUTH_LOG_VERIFICATION_CODES=true */
 function logOtpOnly(phone: string, code: string) {
-  console.info(`[auth] OTP for ${phone}: ${code} (not sent — AUTH_LOG_VERIFICATION_CODES or dev mode)`);
+  console.info(`[auth] OTP for ${phone}: ${code} (not sent — dev/log-only mode)`);
 }
 
 export async function sendOtpSms(phone: string, code: string): Promise<void> {
-  if (process.env.AUTH_LOG_VERIFICATION_CODES === "true") {
-    logOtpOnly(phone, code);
-    return;
-  }
-
-  const sid = process.env.TWILIO_ACCOUNT_SID;
-  const token = process.env.TWILIO_AUTH_TOKEN;
-  const from = process.env.TWILIO_PHONE_NUMBER;
-
-  if (!sid || !token || !from) {
-    if (process.env.NODE_ENV === "production") {
-      throw new Error("Twilio is not configured");
+  if (isVerificationLogOnlyMode() || !canSendSms()) {
+    if (process.env.NODE_ENV === "production" && !isVerificationLogOnlyMode() && !canSendSms()) {
+      throw new Error(
+        "ยังส่ง SMS ไม่ได้ — ตั้ง TWILIO_PHONE_NUMBER หรือ AUTH_LOG_VERIFICATION_CODES=true",
+      );
     }
     logOtpOnly(phone, code);
     return;
   }
 
-  const client = twilio(sid, token);
+  const client = twilio(process.env.TWILIO_ACCOUNT_SID!, process.env.TWILIO_AUTH_TOKEN!);
   await client.messages.create({
-    from,
+    from: process.env.TWILIO_PHONE_NUMBER!,
     to: phone,
     body: `รหัสเข้าสู่ระบบ Greenwich Tennis Academy: ${code} (หมดอายุใน 10 นาที)`,
   });

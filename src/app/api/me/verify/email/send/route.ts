@@ -2,28 +2,29 @@ import { auth } from "@/lib/auth";
 import { sendMemberEmailOtp } from "@/lib/auth/member-verify";
 import { VerificationError } from "@/lib/auth/verification";
 import { sendEmailVerificationCode } from "@/lib/email/send-verification-code";
+import {
+  requireSessionUserId,
+  verifyRouteError,
+  verifySendResponse,
+} from "@/lib/auth/verify-api";
 
 export const dynamic = "force-dynamic";
 
 export async function POST() {
   const session = await auth();
-  if (!session?.user?.id) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const user = requireSessionUserId(session);
+  if ("error" in user) {
+    return Response.json({ error: user.error }, { status: user.status });
   }
 
   try {
-    const { email, code } = await sendMemberEmailOtp(session.user.id);
+    const { email, code } = await sendMemberEmailOtp(user.userId);
     await sendEmailVerificationCode(email, code);
-    const body: { ok: true; devCode?: string } = { ok: true };
-    if (process.env.AUTH_LOG_VERIFICATION_CODES === "true") {
-      body.devCode = code;
-    }
-    return Response.json(body);
+    return Response.json(verifySendResponse(code));
   } catch (err) {
     if (err instanceof VerificationError) {
       return Response.json({ error: err.message }, { status: err.status });
     }
-    console.error(err);
-    return Response.json({ error: "ส่งรหัสไม่สำเร็จ" }, { status: 500 });
+    return verifyRouteError(err, "ส่งรหัสไม่สำเร็จ");
   }
 }

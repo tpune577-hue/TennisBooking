@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { auth } from "@/lib/auth";
 import { confirmMemberEmailOtp } from "@/lib/auth/member-verify";
+import { requireSessionUserId } from "@/lib/auth/verify-api";
 import { getMemberOnboardingStatus, loadReadinessColumns } from "@/lib/auth/member-readiness";
 import { VerificationError } from "@/lib/auth/verification";
 import { getDb, schema } from "@/db";
@@ -14,8 +15,9 @@ const bodySchema = z.object({
 
 export async function POST(req: Request) {
   const session = await auth();
-  if (!session?.user?.id) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+  const authUser = requireSessionUserId(session);
+  if ("error" in authUser) {
+    return Response.json({ error: authUser.error }, { status: authUser.status });
   }
 
   const parsed = bodySchema.safeParse(await req.json());
@@ -24,10 +26,10 @@ export async function POST(req: Request) {
   }
 
   try {
-    await confirmMemberEmailOtp(session.user.id, parsed.data.code);
+    await confirmMemberEmailOtp(authUser.userId, parsed.data.code);
     const db = getDb();
     const user = await db.query.users.findFirst({
-      where: eq(schema.users.id, session.user.id),
+      where: eq(schema.users.id, authUser.userId),
       columns: loadReadinessColumns(),
     });
     if (!user) {

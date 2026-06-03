@@ -12,7 +12,11 @@ const { auth } = NextAuth({
   ...authConfig,
   callbacks: {
     session({ session, token }) {
-      if (token.role) (session.user as unknown as Record<string, unknown>).role = token.role;
+      if (token) {
+        const u = session.user as unknown as Record<string, unknown>;
+        u.id = (token.id ?? token.sub) as string;
+        if (token.role) u.role = token.role;
+      }
       return session;
     },
   },

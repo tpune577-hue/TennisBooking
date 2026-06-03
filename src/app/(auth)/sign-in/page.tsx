@@ -23,19 +23,11 @@ function SignInPageInner() {
     error || fromLiff ? "sign-in" : "hub"
   );
 
-  if (status === "loading") {
-    return (
-      <main className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </main>
-    );
-  }
-
   useEffect(() => {
     if (session?.user) router.replace(callbackUrl);
   }, [session, callbackUrl, router]);
 
-  if (session?.user) {
+  if (status === "loading" || session?.user) {
     return (
       <main className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

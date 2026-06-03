@@ -66,7 +66,12 @@ export function LiffVerifyPanel({
       });
       const json = await parseJson(res);
       if (!res.ok) {
-        setError(json.error ?? "ส่งรหัสไม่สำเร็จ");
+        setError(
+          json.error ??
+            (res.status === 401
+              ? "เซสชันหมดอายุ — ล็อกอินใหม่ที่ URL เดียวกับหน้านี้"
+              : `ส่งรหัสไม่สำเร็จ (${res.status})`),
+        );
         return;
       }
       if (json.devCode) setDevCode(json.devCode);

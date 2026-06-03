@@ -1,14 +1,19 @@
+import { canSendEmail, isVerificationLogOnlyMode } from "@/lib/auth/verification-delivery";
+
 function logEmailCodeOnly(email: string, code: string) {
-  console.info(
-    `[auth] Email verification code for ${email}: ${code} (not sent — AUTH_LOG_VERIFICATION_CODES or dev mode)`,
-  );
+  console.info(`[auth] Email verification code for ${email}: ${code} (not sent — dev/log-only mode)`);
 }
 
 export async function sendEmailVerificationCode(
   email: string,
   code: string,
 ): Promise<void> {
-  if (process.env.AUTH_LOG_VERIFICATION_CODES === "true") {
+  if (isVerificationLogOnlyMode() || !canSendEmail()) {
+    if (process.env.NODE_ENV === "production" && !isVerificationLogOnlyMode() && !canSendEmail()) {
+      throw new Error(
+        "ยังส่งอีเมลไม่ได้ — ตั้ง RESEND_API_KEY + EMAIL_FROM หรือ AUTH_LOG_VERIFICATION_CODES=true",
+      );
+    }
     logEmailCodeOnly(email, code);
     return;
   }
@@ -31,10 +36,6 @@ export async function sendEmailVerificationCode(
       throw new Error("Failed to send email");
     }
     return;
-  }
-
-  if (process.env.NODE_ENV === "production") {
-    throw new Error("Email provider is not configured (RESEND_API_KEY, EMAIL_FROM)");
   }
 
   logEmailCodeOnly(email, code);
