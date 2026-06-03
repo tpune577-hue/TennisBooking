@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
 import { LiffSubpageHeader } from "@/components/liff/liff-subpage-header";
+import { useLiffRequireSession } from "@/hooks/use-liff-require-session";
 import { Loader2 } from "lucide-react";
 
 const TYPE_LABELS: Record<string, { label: string }> = {
@@ -42,11 +43,7 @@ export default function LiffMeCreditsPage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/sign-in?callbackUrl=/liff/me/credits");
-    }
-  }, [status, router]);
+  useLiffRequireSession("/liff/me/credits");
 
   useEffect(() => {
     if (status !== "authenticated") return;

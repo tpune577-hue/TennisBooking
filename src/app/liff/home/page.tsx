@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
 import { useCreditBalance } from "@/hooks/use-credit-balance";
+import { useLiffRequireSession } from "@/hooks/use-liff-require-session";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LiffConnectionError } from "@/components/liff/liff-connection-error";
@@ -45,11 +46,7 @@ export default function LiffHomePage() {
   const [profileTier, setProfileTier] = useState<string | null>(null);
   const [onboarding, setOnboarding] = useState<MemberOnboardingStatus | null>(null);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/sign-in?callbackUrl=/liff/home");
-    }
-  }, [status, router]);
+  useLiffRequireSession("/liff/home");
 
   useEffect(() => {
     if (status !== "authenticated") return;

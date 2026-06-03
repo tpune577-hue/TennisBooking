@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
 import { useCreditBalance } from "@/hooks/use-credit-balance";
+import { useLiffRequireSession } from "@/hooks/use-liff-require-session";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import { AlertCircle, CreditCard, Loader2 } from "lucide-react";
@@ -57,11 +58,7 @@ function ConfirmContent() {
 
   const timeRange = `${String(startHour).padStart(2, "0")}:00 – ${String(endHour).padStart(2, "0")}:00`;
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/sign-in?callbackUrl=/liff/book");
-    }
-  }, [status, router]);
+  useLiffRequireSession("/liff/book/confirm");
 
   useEffect(() => {
     if (!courtId || !date || !startHour || !endHour) {

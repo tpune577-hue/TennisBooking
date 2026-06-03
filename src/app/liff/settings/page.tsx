@@ -6,6 +6,7 @@ import { signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
 import { LiffConnectionError } from "@/components/liff/liff-connection-error";
+import { useLiffRequireSession } from "@/hooks/use-liff-require-session";
 import {
   ChevronRight,
   LogOut,
@@ -25,11 +26,7 @@ export default function LiffSettingsPage() {
   const { status } = useSession();
   const { isReady: liffReady, isInClient, error: liffError } = useLiff();
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/sign-in?callbackUrl=/liff/settings");
-    }
-  }, [status, router]);
+  useLiffRequireSession("/liff/settings");
 
   if (status === "loading" || (isInClient && !liffReady)) {
     return (

@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { LiffProvider } from "@/lib/liff/provider";
 import { LiffLineSync } from "@/components/liff/liff-line-sync";
+import { LiffAuthBridge } from "@/components/liff/liff-auth-bridge";
 import { LiffShell } from "@/components/liff/liff-shell";
 
 export const metadata = {
@@ -10,8 +11,10 @@ export const metadata = {
 export default function LiffLayout({ children }: { children: ReactNode }) {
   return (
     <LiffProvider liffId={process.env.NEXT_PUBLIC_LIFF_ID ?? ""}>
-      <LiffLineSync />
-      <LiffShell>{children}</LiffShell>
+      <LiffAuthBridge>
+        <LiffLineSync />
+        <LiffShell>{children}</LiffShell>
+      </LiffAuthBridge>
     </LiffProvider>
   );
 }

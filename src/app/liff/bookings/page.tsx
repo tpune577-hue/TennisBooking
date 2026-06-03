@@ -8,6 +8,7 @@ import { useLiff } from "@/lib/liff/provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LiffConnectionError } from "@/components/liff/liff-connection-error";
+import { useLiffRequireSession } from "@/hooks/use-liff-require-session";
 import { Calendar, Clock, Loader2, Plus, QrCode, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -52,11 +53,7 @@ export default function LiffBookingsPage() {
   const [cancelling, setCancelling] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; ok: boolean } | null>(null);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/sign-in?callbackUrl=/liff/bookings");
-    }
-  }, [status, router]);
+  useLiffRequireSession("/liff/bookings");
 
   const load = useCallback(async () => {
     setLoading(true);

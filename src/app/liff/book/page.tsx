@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
 import { useCreditBalance } from "@/hooks/use-credit-balance";
+import { useLiffRequireSession } from "@/hooks/use-liff-require-session";
 import { format, addDays, startOfDay } from "date-fns";
 import { th } from "date-fns/locale";
 import { CalendarOff, Clock, Loader2, MapPin, Users } from "lucide-react";
@@ -98,11 +99,7 @@ function BookPageContent() {
   const [canBook, setCanBook] = useState(true);
   const [bookingBlockMessage, setBookingBlockMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/sign-in?callbackUrl=/liff/book");
-    }
-  }, [status, router]);
+  useLiffRequireSession("/liff/book");
 
   useEffect(() => {
     const type = searchParams.get("type");

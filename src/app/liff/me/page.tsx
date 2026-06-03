@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LiffConnectionError } from "@/components/liff/liff-connection-error";
+import { useLiffRequireSession } from "@/hooks/use-liff-require-session";
 import {
   ChevronRight,
   ExternalLink,
@@ -34,11 +35,7 @@ export default function LiffMePage() {
   const { isReady: liffReady, isInClient, profile: liffProfile, error: liffError } = useLiff();
   const [profile, setProfile] = useState<MeProfile | null>(null);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/sign-in?callbackUrl=/liff/me");
-    }
-  }, [status, router]);
+  useLiffRequireSession("/liff/me");
 
   useEffect(() => {
     if (status !== "authenticated") return;

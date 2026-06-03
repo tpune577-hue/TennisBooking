@@ -56,6 +56,11 @@ async function middleware(
     return NextResponse.next();
   }
 
+  // LIFF must load without a session so the client can run LINE → NextAuth bridge
+  if (pathname.startsWith("/liff") && !req.auth?.user) {
+    return NextResponse.next();
+  }
+
   if (!req.auth?.user) {
     const signInUrl = new URL("/sign-in", req.url);
     signInUrl.searchParams.set("callbackUrl", pathname);

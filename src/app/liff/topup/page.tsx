@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useCreditBalance } from "@/hooks/use-credit-balance";
 import { useLiff } from "@/lib/liff/provider";
 import { useLiffNavOverride } from "@/components/liff/liff-shell";
+import { useLiffRequireSession } from "@/hooks/use-liff-require-session";
 import {
   AlertCircle,
   Check,
@@ -95,11 +96,7 @@ export default function LiffTopupPage() {
   // Success state
   const [addedCredits, setAddedCredits] = useState(0);
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/sign-in?callbackUrl=/liff/topup");
-    }
-  }, [status, router]);
+  useLiffRequireSession("/liff/topup");
 
   // Stop polling on unmount
   useEffect(() => {
