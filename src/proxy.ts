@@ -62,6 +62,9 @@ async function middleware(
   }
 
   if (!req.auth?.user) {
+    if (pathname.startsWith("/api/")) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const signInUrl = new URL("/sign-in", req.url);
     signInUrl.searchParams.set("callbackUrl", pathname);
     return NextResponse.redirect(signInUrl);

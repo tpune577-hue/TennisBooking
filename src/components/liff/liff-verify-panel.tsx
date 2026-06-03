@@ -41,20 +41,38 @@ export function LiffVerifyPanel({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const [devCode, setDevCode] = useState<string | null>(null);
+
+  async function parseJson(res: Response): Promise<{ error?: string; devCode?: string }> {
+    const text = await res.text();
+    try {
+      return JSON.parse(text) as { error?: string; devCode?: string };
+    } catch {
+      if (res.status === 401) {
+        return { error: "เซสชันหมดอายุ — ออกจากระบบแล้วเข้าใหม่" };
+      }
+      return { error: "เซิร์ฟเวอร์ตอบกลับไม่ถูกต้อง — ลองรีเฟรชหน้า" };
+    }
+  }
 
   async function sendCode() {
     setSending(true);
     setError(null);
+    setDevCode(null);
     try {
-      const res = await fetch(`${base}/send`, { method: "POST" });
-      const json = (await res.json()) as { error?: string };
+      const res = await fetch(`${base}/send`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const json = await parseJson(res);
       if (!res.ok) {
         setError(json.error ?? "ส่งรหัสไม่สำเร็จ");
         return;
       }
+      if (json.devCode) setDevCode(json.devCode);
       setOtpSent(true);
     } catch {
-      setError("ส่งรหัสไม่สำเร็จ");
+      setError("ส่งรหัสไม่สำเร็จ — ตรวจว่าเปิด URL เดียวกับที่ล็อกอิน (เช่น localhost:3001)");
     } finally {
       setSending(false);
     }
@@ -66,10 +84,11 @@ export function LiffVerifyPanel({
     try {
       const res = await fetch(base, {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ code }),
       });
-      const json = (await res.json()) as { error?: string };
+      const json = await parseJson(res);
       if (!res.ok) {
         setError(json.error ?? "ยืนยันไม่สำเร็จ");
         return;
@@ -113,6 +132,11 @@ export function LiffVerifyPanel({
       ) : (
         <>
           <p className="text-xs text-muted-foreground">{copy.sentHint}</p>
+          {devCode ? (
+            <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-foreground">
+              โหมดทดสอบ — รหัส: <span className="font-mono font-semibold">{devCode}</span>
+            </p>
+          ) : null}
           <div className="space-y-1.5">
             <Label htmlFor={`verify-code-${channel}`} className="text-xs">
               {copy.codeLabel}

@@ -14,7 +14,11 @@ export async function POST() {
   try {
     const { phone, code } = await sendMemberPhoneOtp(session.user.id);
     await sendOtpSms(phone, code);
-    return Response.json({ ok: true });
+    const body: { ok: true; devCode?: string } = { ok: true };
+    if (process.env.AUTH_LOG_VERIFICATION_CODES === "true") {
+      body.devCode = code;
+    }
+    return Response.json(body);
   } catch (err) {
     if (err instanceof VerificationError) {
       return Response.json({ error: err.message }, { status: err.status });
