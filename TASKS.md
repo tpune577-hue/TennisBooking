@@ -162,8 +162,9 @@ All set in `.env.local` (local) and must also be set in Vercel dashboard:
 
 ```
 DATABASE_URL=...                          # Neon Postgres
-AUTH_SECRET=...                           # NextAuth secret
-AUTH_URL=https://your-domain.vercel.app   # must match deployment URL
+AUTH_SECRET=...                           # NextAuth secret (same value on all Vercel envs)
+AUTH_TRUST_HOST=true                      # required on Vercel; uses request Host for OAuth callbacks
+AUTH_URL=https://your-domain.vercel.app   # must match the URL users open (preview URL ≠ production URL)
 LINE_CHANNEL_ID=...                       # LINE Login channel
 LINE_CHANNEL_SECRET=...
 LINE_CHANNEL_ACCESS_TOKEN=...             # Messaging API (for push notifications)
@@ -181,6 +182,8 @@ EMAIL_FROM=Greenwich <hello@greenwichtennis.co.th>
 NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 ACCESS_DEVICE_KEY=...                     # Optional: turnstile / hardware scan (Bearer on POST /api/access/scan)
 ```
+
+**LINE login `InvalidCheck: state value could not be parsed`:** Usually `AUTH_URL` points at a different host than the deployment (e.g. production URL while testing preview), or LINE callback URL is not registered for that host. Fix: set `AUTH_URL` to the exact preview URL, add `https://<that-host>/api/auth/callback/line` in LINE Login channel, redeploy. Clear site cookies and retry.
 
 ---
 

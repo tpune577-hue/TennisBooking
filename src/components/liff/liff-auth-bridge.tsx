@@ -1,7 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useRef, useState, type ReactNode } from "react";
-import Link from "next/link";
+import { Suspense, useEffect, useRef, type ReactNode } from "react";
 import { usePathname, useSearchParams } from "next/navigation";
 import { signIn, useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
@@ -13,7 +12,6 @@ function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
   const searchParams = useSearchParams();
   const { isInClient, isReady, isLoggedIn, error: liffError } = useLiff();
   const signInStarted = useRef(false);
-  const [bridgeError, setBridgeError] = useState<string | null>(null);
 
   const callbackUrl =
     pathname +
@@ -24,18 +22,8 @@ function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
     if (status !== "unauthenticated") return;
     if (signInStarted.current) return;
     signInStarted.current = true;
-    void signIn("line", { callbackUrl, redirect: false }).then((result) => {
-      if (result?.error) {
-        setBridgeError(
-          "ยังไม่พบบัญชีที่ผูกกับ LINE นี้ กรุณาสมัครสมาชิกบนเว็บก่อน",
-        );
-        signInStarted.current = false;
-        return;
-      }
-      if (result?.url) {
-        window.location.href = result.url;
-      }
-    });
+    // Full redirect keeps OAuth state/PKCE cookies intact (redirect: false breaks in LINE WebView)
+    void signIn("line", { callbackUrl });
   }, [isInClient, isReady, isLoggedIn, status, callbackUrl]);
 
   if (!isInClient) {
@@ -51,17 +39,6 @@ function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         <p className="text-sm text-muted-foreground">กำลังเชื่อมต่อ LINE...</p>
-      </div>
-    );
-  }
-
-  if (bridgeError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8 text-center max-w-sm mx-auto">
-        <p className="text-sm text-destructive">{bridgeError}</p>
-        <Link href="/sign-up" className="text-sm font-medium text-primary underline">
-          สมัครสมาชิก
-        </Link>
       </div>
     );
   }

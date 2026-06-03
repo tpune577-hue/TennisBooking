@@ -5,6 +5,8 @@ import { verifyEmailToken, verifyPhoneOtp } from "./verification";
 import { loadUserForSession } from "./users";
 
 export const authConfig: NextAuthConfig = {
+  // Required on Vercel preview/production when AUTH_URL may differ from request host
+  trustHost: true,
   providers: [
     LINE({
       clientId: process.env.LINE_CHANNEL_ID!,
