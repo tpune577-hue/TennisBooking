@@ -7,7 +7,7 @@ import { useLiff } from "@/lib/liff/provider";
 import { Loader2 } from "lucide-react";
 
 function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
-  const { status } = useSession();
+  const { data: session, status } = useSession();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { isInClient, isReady, isLoggedIn, error: liffError } = useLiff();
@@ -56,7 +56,18 @@ function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
     );
   }
 
-  if (status === "loading" || status === "unauthenticated") {
+  // Only block while there is no session yet. Session refetch (e.g. refetchOnWindowFocus
+  // in LINE WebView) sets status to "loading" briefly — must not unmount LIFF UI.
+  if (status === "unauthenticated") {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">กำลังเข้าสู่ระบบ...</p>
+      </div>
+    );
+  }
+
+  if (status === "loading" && !session?.user) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
