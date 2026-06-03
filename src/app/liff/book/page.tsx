@@ -7,20 +7,23 @@ import { useLiff } from "@/lib/liff/provider";
 import { useCreditBalance } from "@/hooks/use-credit-balance";
 import { format, addDays, startOfDay } from "date-fns";
 import { th } from "date-fns/locale";
-import { Clock, Loader2 } from "lucide-react";
+import { CalendarOff, Clock, Loader2, MapPin, Users } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import {
   BookingChip,
   BookingDateSkeleton,
+  BookingEmptyState,
   BookingField,
   BookingForm,
   BookingFormSection,
+  BookingRangeTip,
   BookingSlotSkeleton,
   BookingStickyFooter,
   BookingTypeToggle,
   type BookingType,
   LiffBookingHeader,
+  useBookingRangeTip,
 } from "@/components/liff/booking/booking-ui";
 
 type Court = {
@@ -88,8 +91,10 @@ function BookPageContent() {
   const [endHour, setEndHour] = useState<number | null>(null);
   const [pendingStart, setPendingStart] = useState<number | null>(null);
   const [loadingCourts, setLoadingCourts] = useState(true);
+  const [courtsLoadFailed, setCourtsLoadFailed] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [loadingCoaches, setLoadingCoaches] = useState(false);
+  const { visible: showRangeTip, dismiss: dismissRangeTip } = useBookingRangeTip();
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -113,12 +118,25 @@ function BookPageContent() {
     router.replace(`/liff/book?${p.toString()}`, { scroll: false });
   }
 
-  useEffect(() => {
+  function loadCourts() {
+    setLoadingCourts(true);
+    setCourtsLoadFailed(false);
     fetch("/api/courts")
-      .then((r) => r.json())
+      .then((r) => {
+        if (!r.ok) throw new Error("courts");
+        return r.json();
+      })
       .then((data) => setCourts(Array.isArray(data) ? data : []))
-      .catch(() => toast.error("โหลดข้อมูลสนามไม่สำเร็จ"))
+      .catch(() => {
+        setCourts([]);
+        setCourtsLoadFailed(true);
+        toast.error("โหลดรายการคอร์ตไม่สำเร็จ · ลองอีกครั้ง");
+      })
       .finally(() => setLoadingCourts(false));
+  }
+
+  useEffect(() => {
+    loadCourts();
   }, []);
 
   useEffect(() => {
@@ -135,7 +153,9 @@ function BookPageContent() {
       .then((data) =>
         setSlots(Array.isArray(data.slots) ? data.slots : [])
       )
-      .catch(() => toast.error("โหลดช่วงเวลาไม่สำเร็จ"))
+      .catch(() =>
+        toast.error("โหลดช่วงเวลาว่างไม่สำเร็จ · ลองเลือกวันอื่น")
+      )
       .finally(() => setLoadingSlots(false));
   }, [selectedCourt, selectedDate]);
 
@@ -151,7 +171,7 @@ function BookPageContent() {
     fetch("/api/coaches")
       .then((r) => r.json())
       .then((data) => setCoaches(Array.isArray(data) ? data : []))
-      .catch(() => toast.error("โหลดข้อมูลโค้ชไม่สำเร็จ"))
+      .catch(() => toast.error("โหลดรายชื่อโค้ชไม่สำเร็จ · ลองอีกครั้ง"))
       .finally(() => setLoadingCoaches(false));
   }, [bookingType, startHour, endHour, coaches.length]);
 
@@ -221,7 +241,7 @@ function BookPageContent() {
         .every((s) => s.available);
 
       if (!rangeValid) {
-        toast.error("มีช่วงเวลาที่ถูกจองแล้วในช่วงที่เลือก");
+        toast.error("มีช่วงที่ถูกจองแล้ว · เลือกช่วงเวลาใหม่");
         setPendingStart(null);
         return;
       }
@@ -270,6 +290,40 @@ function BookPageContent() {
         ? "แตะเวลาเริ่มของรอบที่ต้องการ"
         : null;
 
+  const nextStep = useMemo(() => {
+    if (!selectedCourt) {
+      return courts.length > 0
+        ? "ถัดไป: เลือกคอร์ตจากรายการด้านบน"
+        : null;
+    }
+    if (startHour === null || endHour === null) {
+      return pendingStart !== null
+        ? "ถัดไป: แตะชั่วโมงสิ้นสุดของรอบ"
+        : "ถัดไป: แตะชั่วโมงเริ่ม แล้วแตะชั่วโมงสิ้นสุด";
+    }
+    if (bookingType === "court_with_coach" && !selectedCoach) {
+      return coaches.length > 0
+        ? "ถัดไป: เลือกโค้ชสำหรับช่วงเวลานี้"
+        : null;
+    }
+    return null;
+  }, [
+    selectedCourt,
+    courts.length,
+    startHour,
+    endHour,
+    pendingStart,
+    bookingType,
+    selectedCoach,
+    coaches.length,
+  ]);
+
+  const showRangeTipBanner =
+    showRangeTip &&
+    selectedCourt !== null &&
+    startHour === null &&
+    pendingStart === null;
+
   if ((status === "loading" && !session) || !liffReady) {
     return (
       <div className="flex flex-col items-center justify-center flex-1 gap-3 p-8">
@@ -294,6 +348,10 @@ function BookPageContent() {
           value={bookingType}
           onChange={setBookingTypeAndUrl}
         />
+
+        {showRangeTip && !selectedCourt && courts.length > 0 ? (
+          <BookingRangeTip onDismiss={dismissRangeTip} />
+        ) : null}
 
         <BookingForm>
           <BookingFormSection>
@@ -350,9 +408,30 @@ function BookPageContent() {
                 ))}
               </div>
             ) : courts.length === 0 ? (
-              <p className="text-sm text-muted-foreground py-2">
-                ไม่พบคอร์ตที่เปิดให้จอง
-              </p>
+              <BookingEmptyState
+                icon={MapPin}
+                title={
+                  courtsLoadFailed
+                    ? "โหลดรายการคอร์ตไม่สำเร็จ"
+                    : "ยังไม่มีคอร์ตให้จอง"
+                }
+                description={
+                  courtsLoadFailed
+                    ? "ตรวจสอบการเชื่อมต่อแล้วลองโหลดอีกครั้ง"
+                    : "ติดต่อเคาน์เตอร์สโมสรหากคุณคาดว่าควรมีคอร์ตว่าง"
+                }
+                action={
+                  courtsLoadFailed ? (
+                    <button
+                      type="button"
+                      onClick={loadCourts}
+                      className="text-sm font-semibold text-primary underline-offset-2 hover:underline min-h-11 px-3"
+                    >
+                      ลองโหลดอีกครั้ง
+                    </button>
+                  ) : undefined
+                }
+              />
             ) : (
               <div className="flex flex-wrap gap-2">
                 {courts.map((court) => (
@@ -379,8 +458,8 @@ function BookPageContent() {
                 {selectedCourt.pricing ? (
                   <>
                     {" "}
-                    · นอกช่วง Peak {selectedCourt.pricing.offPeakPricePerHour}{" "}
-                    cr/ชม.
+                    · นอกช่วงราคาสูง {selectedCourt.pricing.offPeakPricePerHour}{" "}
+                    เครดิต/ชม.
                   </>
                 ) : null}
               </p>
@@ -388,17 +467,35 @@ function BookPageContent() {
           </BookingField>
           </BookingFormSection>
 
+          {!selectedCourt && !loadingCourts && courts.length > 0 ? (
+            <BookingFormSection className="py-5">
+              <BookingField step="3" label="เลือกเวลา">
+                <BookingEmptyState
+                  icon={Clock}
+                  title="เลือกคอร์ตก่อน"
+                  description="เมื่อเลือกคอร์ตแล้ว จะแสดงช่วงเวลาที่ว่างในวันที่เลือก"
+                />
+              </BookingField>
+            </BookingFormSection>
+          ) : null}
+
           {selectedCourt ? (
             <BookingFormSection className="py-6">
             <BookingField step="3" label="เลือกเวลา">
               {loadingSlots ? (
                 <BookingSlotSkeleton />
-              ) : slots.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-2">
-                  ไม่มีช่วงเวลาว่างในวันนี้
-                </p>
+              ) : slots.length === 0 ||
+                !slots.some((s) => s.available) ? (
+                <BookingEmptyState
+                  icon={CalendarOff}
+                  title="ไม่มีช่วงเวลาว่างในวันนี้"
+                  description="ลองเลือกวันอื่นที่แถบเลือกวันด้านบน หรือเปลี่ยนคอร์ต"
+                />
               ) : (
                 <>
+                  {showRangeTipBanner ? (
+                    <BookingRangeTip onDismiss={dismissRangeTip} />
+                  ) : null}
                   {timeHint ? (
                     <p
                       className="text-sm text-primary font-medium -mt-1"
@@ -432,7 +529,7 @@ function BookPageContent() {
                           {String(slot.hour).padStart(2, "0")}:00
                           {slot.available && !inRange && slot.isPeak ? (
                             <span className="block text-xs mt-0.5 text-[var(--brand-oak-deep)]">
-                              Peak
+                              ราคาสูง
                             </span>
                           ) : null}
                         </BookingChip>
@@ -447,11 +544,11 @@ function BookPageContent() {
                     </span>
                     <span className="flex items-center gap-2">
                       <span className="h-3.5 w-3.5 rounded-sm bg-[var(--brand-oak-deep)] shrink-0" />
-                      ช่วง Peak
+                      ช่วงราคาสูง
                     </span>
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    ช่วง Peak คิดเครดิตสูงกว่า
+                    ช่วงราคาสูงใช้เครดิตมากกว่าช่วงปกติ
                   </p>
 
                   {pendingStart !== null ? (
@@ -484,9 +581,20 @@ function BookPageContent() {
                     ))}
                   </div>
                 ) : coaches.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    ไม่มีโค้ชว่างในขณะนี้
-                  </p>
+                  <BookingEmptyState
+                    icon={Users}
+                    title="ไม่มีโค้ชว่างในช่วงนี้"
+                    description="ลองเปลี่ยนช่วงเวลา หรือจองสนามอย่างเดียวแล้วนัดโค้ชภายหลัง"
+                    action={
+                      <button
+                        type="button"
+                        onClick={() => setBookingTypeAndUrl("court_only")}
+                        className="text-sm font-semibold text-primary underline-offset-2 hover:underline min-h-11 px-3"
+                      >
+                        จองสนามอย่างเดียวแทน
+                      </button>
+                    }
+                  />
                 ) : (
                   <div className="flex flex-col gap-3">
                     {coaches.map((coach) => {
@@ -539,7 +647,7 @@ function BookPageContent() {
                             ) : null}
                           </div>
                           <p className="text-sm font-semibold tabular-nums shrink-0 text-muted-foreground">
-                            +{coach.pricePerHour} cr/ชม.
+                            +{coach.pricePerHour} เครดิต/ชม.
                           </p>
                         </button>
                       );
@@ -567,6 +675,7 @@ function BookPageContent() {
         canProceed={selectionComplete}
         hasEnoughCredits={hasEnoughCredits}
         creditShortfall={creditShortfall}
+        nextStep={nextStep}
         onConfirm={handleConfirm}
         onTopUp={() => router.push("/liff/topup")}
       />

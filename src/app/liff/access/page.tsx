@@ -3,6 +3,7 @@
 import { Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { AccessQrCard } from "@/components/access/access-qr-card";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Loader2, ChevronLeft } from "lucide-react";
 
@@ -13,7 +14,15 @@ function AccessContent() {
 
   if (!bookingId) {
     return (
-      <p className="text-sm text-destructive text-center p-6">ไม่พบรหัสการจอง</p>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-4 p-8 text-center">
+        <p className="text-sm font-medium text-foreground">ไม่พบการจองนี้</p>
+        <p className="text-sm text-muted-foreground leading-relaxed">
+          เปิด QR จากรายการ «การจองของฉัน» หรือลิงก์ยืนยันใน LINE
+        </p>
+        <Link href="/liff/bookings">
+          <Button size="sm">ไปที่การจองของฉัน</Button>
+        </Link>
+      </div>
     );
   }
 

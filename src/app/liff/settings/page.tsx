@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
+import { LiffConnectionError } from "@/components/liff/liff-connection-error";
 import {
   ChevronRight,
   LogOut,
@@ -40,37 +41,33 @@ export default function LiffSettingsPage() {
   }
 
   if (liffError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">ไม่สามารถเปิด LIFF ได้</p>
-      </div>
-    );
+    return <LiffConnectionError detail={liffError} />;
   }
 
   const links = [
     {
       href: `mailto:${CONTACT_EMAIL}`,
-      label: "Contact club",
+      label: "ติดต่อสโมสร",
       description: CONTACT_EMAIL,
       icon: Mail,
     },
     {
       href: PRIVACY_URL,
-      label: "Privacy policy",
-      description: "นโยบายความเป็นส่วนตัว",
+      label: "นโยบายความเป็นส่วนตัว",
+      description: "อ่านนโยบายความเป็นส่วนตัว",
       icon: Shield,
     },
     {
       href: TERMS_URL,
-      label: "Terms of service",
-      description: "ข้อกำหนดการใช้งาน",
+      label: "ข้อกำหนดการใช้งาน",
+      description: "อ่านข้อกำหนดการใช้งาน",
       icon: FileText,
     },
   ];
 
   return (
     <div className="p-4 pb-6 space-y-5">
-      <h1 className="text-lg font-bold text-foreground">Settings</h1>
+      <h1 className="text-lg font-bold text-foreground">ตั้งค่า</h1>
 
       <div className="rounded-2xl border border-border bg-card overflow-hidden divide-y divide-border">
         {links.map((item) => {
@@ -100,11 +97,11 @@ export default function LiffSettingsPage() {
         className="w-full flex items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/5 text-destructive py-3.5 text-sm font-semibold hover:bg-destructive/10 transition-colors"
       >
         <LogOut className="h-4 w-4" />
-        Sign out
+        ออกจากระบบ
       </button>
 
       <p className="text-center text-[10px] text-muted-foreground tracking-wide">
-        Version {APP_VERSION}
+        เวอร์ชัน {APP_VERSION}
       </p>
     </div>
   );

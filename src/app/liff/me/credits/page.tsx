@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LiffSubpageHeader } from "@/components/liff/liff-subpage-header";
 import { Loader2 } from "lucide-react";
@@ -75,7 +74,7 @@ export default function LiffMeCreditsPage() {
           <p className="text-xs text-muted-foreground">เครดิต</p>
           <Link href="/liff/topup" className="block mt-3">
             <Button size="sm" className="w-full">
-              Top up
+              เติมเครดิต
             </Button>
           </Link>
         </div>
@@ -87,8 +86,16 @@ export default function LiffMeCreditsPage() {
             <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
           </div>
         ) : transactions.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
-            ยังไม่มีประวัติธุรกรรม
+          <div className="rounded-2xl border border-dashed border-border py-10 px-4 text-center space-y-2">
+            <p className="text-sm font-medium text-foreground">ยังไม่มีประวัติธุรกรรม</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              เติมเครดิตหรือจองสนามเพื่อเริ่มบันทึกรายการ
+            </p>
+            <Link href="/liff/topup">
+              <Button size="sm" className="mt-2">
+                เติมเครดิต
+              </Button>
+            </Link>
           </div>
         ) : (
           <div className="space-y-2">
@@ -101,12 +108,7 @@ export default function LiffMeCreditsPage() {
                   className="rounded-xl border border-border bg-card px-4 py-3 flex items-center justify-between gap-3"
                 >
                   <div className="min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="text-sm font-medium">{info.label}</span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {t.type}
-                      </Badge>
-                    </div>
+                    <span className="text-sm font-medium">{info.label}</span>
                     {t.description && (
                       <p className="text-xs text-muted-foreground truncate">{t.description}</p>
                     )}

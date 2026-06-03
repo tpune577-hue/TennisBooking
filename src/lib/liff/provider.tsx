@@ -59,7 +59,10 @@ export function LiffProvider({ liffId, children }: { liffId: string; children: R
           setState((prev) => ({
             ...prev,
             isReady: true,
-            error: err instanceof Error ? err.message : "LIFF init failed",
+            error:
+              err instanceof Error
+                ? err.message
+                : "ไม่สามารถเชื่อมต่อ LINE ได้",
           }));
         }
       }

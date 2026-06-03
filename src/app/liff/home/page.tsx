@@ -8,6 +8,7 @@ import { useLiff } from "@/lib/liff/provider";
 import { useCreditBalance } from "@/hooks/use-credit-balance";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { LiffConnectionError } from "@/components/liff/liff-connection-error";
 import { CalendarDays, ChevronRight, Loader2, Wallet } from "lucide-react";
 
 interface UpcomingBooking {
@@ -81,12 +82,7 @@ export default function LiffHomePage() {
   }
 
   if (liffError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">ไม่สามารถเปิด LIFF ได้</p>
-        <p className="text-xs text-muted-foreground/60">{liffError}</p>
-      </div>
-    );
+    return <LiffConnectionError detail={liffError} />;
   }
 
   const firstName = session?.user?.name?.split(" ")[0] ?? "สมาชิก";
@@ -125,7 +121,7 @@ export default function LiffHomePage() {
         </div>
         <Link href="/liff/topup" className="block mt-4">
           <Button variant="outline" size="sm" className="w-full">
-            Top up
+            เติมเครดิต
           </Button>
         </Link>
       </div>
@@ -159,8 +155,11 @@ export default function LiffHomePage() {
           </div>
         </div>
       ) : (
-        <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-6 text-center">
-          <p className="text-sm text-muted-foreground">ยังไม่มีการจองที่กำลังจะมาถึง</p>
+        <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-6 text-center space-y-1">
+          <p className="text-sm font-medium text-foreground">ยังไม่มีการจองถัดไป</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            กดจองคอร์ตด้านล่างเพื่อเลือกวัน เวลา และคอร์ต
+          </p>
         </div>
       )}
 

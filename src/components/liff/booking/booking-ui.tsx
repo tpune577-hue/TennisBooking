@@ -1,9 +1,12 @@
 "use client";
 
+import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, X, type LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+const BOOKING_RANGE_TIP_KEY = "liff-booking-range-tip-dismissed";
 
 export function LiffBookingHeader({
   title,
@@ -102,6 +105,82 @@ export function BookingFormSection({
   className?: string;
 }) {
   return <div className={cn("px-4 py-5", className)}>{children}</div>;
+}
+
+export function BookingEmptyState({
+  icon: Icon,
+  title,
+  description,
+  action,
+}: {
+  icon?: LucideIcon;
+  title: string;
+  description: string;
+  action?: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-sm border border-dashed border-border bg-[var(--brand-paper)] px-4 py-6 text-center">
+      {Icon ? (
+        <Icon
+          className="h-8 w-8 mx-auto text-[var(--brand-oak-deep)]/70 mb-3"
+          aria-hidden
+        />
+      ) : null}
+      <p className="text-sm font-semibold text-foreground">{title}</p>
+      <p className="text-sm text-muted-foreground mt-1.5 leading-relaxed max-w-[28rem] mx-auto text-pretty">
+        {description}
+      </p>
+      {action ? <div className="mt-4 flex justify-center gap-2">{action}</div> : null}
+    </div>
+  );
+}
+
+export function BookingRangeTip({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <div
+      className="rounded-sm border border-border bg-[var(--brand-paper)] px-3 py-3 flex gap-2 items-start"
+      role="note"
+    >
+      <p className="text-sm text-muted-foreground flex-1 leading-relaxed text-pretty">
+        <span className="font-medium text-foreground">เลือกเวลาเป็นช่วง</span>
+        {" · "}
+        แตะชั่วโมงเริ่ม แล้วแตะชั่วโมงสิ้นสุดของรอบ
+      </p>
+      <button
+        type="button"
+        onClick={onDismiss}
+        className="shrink-0 p-1 -mr-0.5 rounded-sm text-muted-foreground hover:text-foreground min-h-11 min-w-11 flex items-center justify-center"
+        aria-label="ปิดคำแนะนำ"
+      >
+        <X className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+export function useBookingRangeTip() {
+  const [visible, setVisible] = React.useState(false);
+
+  React.useEffect(() => {
+    try {
+      if (sessionStorage.getItem(BOOKING_RANGE_TIP_KEY) !== "1") {
+        setVisible(true);
+      }
+    } catch {
+      setVisible(true);
+    }
+  }, []);
+
+  function dismiss() {
+    try {
+      sessionStorage.setItem(BOOKING_RANGE_TIP_KEY, "1");
+    } catch {
+      /* ignore */
+    }
+    setVisible(false);
+  }
+
+  return { visible, dismiss };
 }
 
 export function BookingField({
@@ -337,6 +416,7 @@ export function BookingStickyFooter({
   canProceed,
   hasEnoughCredits,
   creditShortfall,
+  nextStep,
   onConfirm,
   onTopUp,
 }: {
@@ -345,6 +425,7 @@ export function BookingStickyFooter({
   canProceed: boolean;
   hasEnoughCredits: boolean;
   creditShortfall: number;
+  nextStep?: string | null;
   onConfirm: () => void;
   onTopUp: () => void;
 }) {
@@ -370,17 +451,26 @@ export function BookingStickyFooter({
             <div className="flex justify-between gap-3 pt-1.5 border-t border-white/10">
               <span className="text-[oklch(0.72_0.02_85)]">รวม</span>
               <span className="font-heading text-lg tabular-nums">
-                {totalCost.toLocaleString()} cr
+                {totalCost.toLocaleString()} เครดิต
               </span>
             </div>
           ) : null}
         </div>
       ) : null}
 
+      {!canProceed && nextStep ? (
+        <p
+          className="text-sm text-muted-foreground text-center leading-relaxed px-1"
+          role="status"
+        >
+          {nextStep}
+        </p>
+      ) : null}
+
       {canProceed && !hasEnoughCredits ? (
         <div className="rounded-sm border border-destructive/30 bg-destructive/8 px-3 py-2.5 flex items-center justify-between gap-3">
           <p className="text-sm text-destructive font-medium">
-            เครดิตไม่พอ · ขาด {creditShortfall.toLocaleString()} cr
+            เครดิตไม่พอ · ขาด {creditShortfall.toLocaleString()} เครดิต
           </p>
           <button
             type="button"
@@ -404,10 +494,10 @@ export function BookingStickyFooter({
         )}
       >
         {canProceed && hasEnoughCredits
-          ? `ยืนยันการจอง · ${totalCost.toLocaleString()} เครดิต`
+          ? `ไปยืนยันการจอง · ${totalCost.toLocaleString()} เครดิต`
           : canProceed
-            ? "เติมเครดิตก่อนจอง"
-            : "เลือกให้ครบก่อน"}
+            ? "ไปเติมเครดิต"
+            : "เลือกวัน คอร์ต และเวลาให้ครบ"}
       </button>
       </div>
     </div>

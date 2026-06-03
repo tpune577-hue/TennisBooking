@@ -96,7 +96,7 @@ function ConfirmContent() {
 
       const data = await res.json();
       if (!res.ok) {
-        toast.error(data.error ?? "เกิดข้อผิดพลาด กรุณาลองใหม่");
+        toast.error(data.error ?? "จองไม่สำเร็จ กรุณาลองอีกครั้ง");
         return;
       }
 
@@ -113,7 +113,7 @@ function ConfirmContent() {
 
       router.push(`/liff/booking-success?${p.toString()}`);
     } catch {
-      toast.error("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      toast.error("จองไม่สำเร็จ ตรวจสอบการเชื่อมต่อแล้วลองอีกครั้ง");
     } finally {
       setConfirming(false);
     }
@@ -151,9 +151,9 @@ function ConfirmContent() {
         <BookingSummary
           rows={summaryRows}
           totalValue={
-            totalCost > 0 ? `${totalCost.toLocaleString()} cr` : "—"
+            totalCost > 0 ? `${totalCost.toLocaleString()} เครดิต` : "—"
           }
-          note="ชำระด้วยเครดิตคงเหลือ · เติมผ่าน PromptPay"
+          note="หักจากเครดิตคงเหลือ · เติมได้ที่หน้าเติมเครดิต"
           action={
             <Button
               className="w-full h-12 rounded-sm btn-brand text-sm font-semibold tracking-wide uppercase"
@@ -181,14 +181,14 @@ function ConfirmContent() {
               <div className="flex justify-between gap-3">
                 <span className="text-muted-foreground">ค่าสนาม</span>
                 <span className="font-semibold tabular-nums">
-                  {courtCost.toLocaleString()} cr
+                  {courtCost.toLocaleString()} เครดิต
                 </span>
               </div>
               {coachCost > 0 && coachName ? (
                 <div className="flex justify-between gap-3">
                   <span className="text-muted-foreground">ค่าโค้ช</span>
                   <span className="font-semibold tabular-nums">
-                    {coachCost.toLocaleString()} cr
+                    {coachCost.toLocaleString()} เครดิต
                   </span>
                 </div>
               ) : null}
@@ -220,8 +220,8 @@ function ConfirmContent() {
             </p>
             <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
               {hasEnoughCredits
-                ? `หลังยืนยันเหลือ ${remaining.toLocaleString()} cr`
-                : `ขาดอีก ${(totalCost - creditBalance).toLocaleString()} cr · เติมเครดิตก่อนจอง`}
+                ? `หลังยืนยันเหลือ ${remaining.toLocaleString()} เครดิต`
+                : `ขาดอีก ${(totalCost - creditBalance).toLocaleString()} เครดิต · ไปหน้าเติมเครดิต`}
             </p>
           </div>
         </div>

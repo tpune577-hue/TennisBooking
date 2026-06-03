@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { LiffConnectionError } from "@/components/liff/liff-connection-error";
 import {
   ChevronRight,
   ExternalLink,
@@ -58,11 +59,7 @@ export default function LiffMePage() {
   }
 
   if (liffError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">ไม่สามารถเปิด LIFF ได้</p>
-      </div>
-    );
+    return <LiffConnectionError detail={liffError} />;
   }
 
   const displayName = profile?.name ?? session?.user?.name ?? "สมาชิก";
@@ -76,14 +73,14 @@ export default function LiffMePage() {
   const menuItems = [
     {
       href: "/liff/me/credits",
-      label: "Credit history",
-      description: "ประวัติเครดิตและธุรกรรม",
+      label: "ประวัติเครดิต",
+      description: "ดูยอดคงเหลือและรายการเติม/ใช้",
       icon: History,
     },
     {
       href: "/dashboard",
-      label: "Open web dashboard",
-      description: "จัดการบัญชีบนเบราว์เซอร์",
+      label: "เปิดแดชบอร์ดบนเว็บ",
+      description: "สำหรับจัดการบัญชีบนคอมพิวเตอร์",
       icon: ExternalLink,
       external: false,
     },

@@ -7,6 +7,7 @@ import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { LiffConnectionError } from "@/components/liff/liff-connection-error";
 import { Calendar, Clock, Loader2, Plus, QrCode, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -82,11 +83,7 @@ export default function LiffBookingsPage() {
   }
 
   if (liffError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8 text-center">
-        <p className="text-sm text-muted-foreground">ไม่สามารถเปิด LIFF ได้</p>
-      </div>
-    );
+    return <LiffConnectionError detail={liffError} />;
   }
 
   const now = new Date();
@@ -98,14 +95,23 @@ export default function LiffBookingsPage() {
   );
   const visible = tab === "upcoming" ? upcoming : past;
 
-  async function cancel(id: string) {
-    if (!confirm("ยืนยันการยกเลิกการจอง?")) return;
+  async function cancel(booking: Booking) {
+    const hrs = hoursUntil(booking.startTime);
+    const willRefund = hrs >= 24;
+    const message = willRefund
+      ? `ยกเลิกการจอง ${booking.court.name}?\n\nเครดิตจะคืนเข้าบัญชีเมื่อยกเลิกสำเร็จ`
+      : `ยกเลิกการจอง ${booking.court.name}?\n\nยกเลิกภายใน 24 ชม. ก่อนเวลาเล่น จึงไม่คืนเครดิต`;
+    if (!confirm(message)) return;
+    const id = booking.id;
     setCancelling(id);
     try {
       const res = await fetch(`/api/bookings/${id}/cancel`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) {
-        setToast({ msg: data.error ?? "เกิดข้อผิดพลาด", ok: false });
+        setToast({
+          msg: data.error ?? "ยกเลิกไม่สำเร็จ กรุณาลองอีกครั้ง",
+          ok: false,
+        });
       } else {
         setToast({
           msg: data.refunded
@@ -128,7 +134,7 @@ export default function LiffBookingsPage() {
         <Link href="/liff/book">
           <Button size="sm" className="h-9 gap-1">
             <Plus className="h-4 w-4" />
-            Book new
+            จองใหม่
           </Button>
         </Link>
       </div>
@@ -154,7 +160,7 @@ export default function LiffBookingsPage() {
           className="flex-1"
           onClick={() => setTab("upcoming")}
         >
-          Upcoming ({upcoming.length})
+          กำลังมาถึง ({upcoming.length})
         </Button>
         <Button
           variant={tab === "past" ? "default" : "outline"}
@@ -162,7 +168,7 @@ export default function LiffBookingsPage() {
           className="flex-1"
           onClick={() => setTab("past")}
         >
-          Past ({past.length})
+          ผ่านมาแล้ว ({past.length})
         </Button>
       </div>
 
@@ -173,8 +179,26 @@ export default function LiffBookingsPage() {
           ))}
         </div>
       ) : visible.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-border py-12 text-center text-sm text-muted-foreground">
-          {tab === "upcoming" ? "ยังไม่มีการจองที่กำลังจะมาถึง" : "ยังไม่มีประวัติการจอง"}
+        <div className="rounded-2xl border border-dashed border-border py-10 px-4 text-center space-y-3">
+          <p className="text-sm font-medium text-foreground">
+            {tab === "upcoming"
+              ? "ยังไม่มีการจองที่กำลังมาถึง"
+              : "ยังไม่มีประวัติการจอง"}
+          </p>
+          {tab === "upcoming" ? (
+            <>
+              <p className="text-sm text-muted-foreground leading-relaxed">
+                จองคอร์ตเพื่อดูรายการที่นี่
+              </p>
+              <Link href="/liff/book">
+                <Button size="sm">จองคอร์ต</Button>
+              </Link>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              การจองที่ผ่านมาแล้วหรือยกเลิกจะแสดงที่นี่
+            </p>
+          )}
         </div>
       ) : (
         <div className="space-y-3">
@@ -231,7 +255,7 @@ export default function LiffBookingsPage() {
                     </Badge>
                   </div>
                   <p className="text-sm font-bold tabular-nums shrink-0">
-                    {b.totalCreditCost}
+                    {b.totalCreditCost} เครดิต
                   </p>
                 </div>
 
@@ -250,7 +274,7 @@ export default function LiffBookingsPage() {
                       size="sm"
                       variant="outline"
                       className="text-xs text-destructive border-destructive/30"
-                      onClick={() => cancel(b.id)}
+                      onClick={() => cancel(b)}
                       disabled={cancelling === b.id}
                     >
                       <X className="h-3 w-3 mr-1" />
@@ -260,7 +284,9 @@ export default function LiffBookingsPage() {
                 </div>
                 {canCancel && (
                   <p className="text-[10px] text-muted-foreground mt-2">
-                    {willRefund ? "ยกเลิกก่อน 24 ชม. — คืนเครดิต" : "ยกเลิกภายใน 24 ชม. — ไม่คืนเครดิต"}
+                    {willRefund
+                      ? "ยกเลิกก่อนเวลาเล่น 24 ชม. คืนเครดิต"
+                      : "ยกเลิกภายใน 24 ชม. ก่อนเวลาเล่น ไม่คืนเครดิต"}
                   </p>
                 )}
               </div>

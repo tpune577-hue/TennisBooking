@@ -122,7 +122,7 @@ export default function LiffTopupPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error ?? "เกิดข้อผิดพลาด กรุณาลองใหม่");
+        setError(data.error ?? "เริ่มชำระไม่สำเร็จ กรุณาลองอีกครั้ง");
         return;
       }
       setPaymentId(data.paymentId);
@@ -130,7 +130,7 @@ export default function LiffTopupPage() {
       setScreen("promptpay");
       pollPayment(data.paymentId);
     } catch {
-      setError("เกิดข้อผิดพลาด กรุณาลองใหม่");
+      setError("เริ่มชำระไม่สำเร็จ กรุณาลองอีกครั้ง");
     } finally {
       setLoading(false);
     }
@@ -167,7 +167,9 @@ export default function LiffTopupPage() {
         }
       }
       setPolling(false);
-      setError("หมดเวลารอ กรุณาตรวจสอบยอดเครดิตในหน้า เครดิตของฉัน");
+      setError(
+        "รอการชำระนานเกินไป ตรวจสอบยอดที่ประวัติเครดิต หรือลองชำระอีกครั้ง"
+      );
     },
     [pkg.credits, refreshCreditBalance]
   );
@@ -175,7 +177,7 @@ export default function LiffTopupPage() {
   // ─── Credit card flow ───────────────────────────────────────────────────────
   async function submitCard() {
     if (!window.Omise) {
-      setCardError("โหลด Omise.js ไม่สำเร็จ กรุณา reload");
+      setCardError("ระบบชำระเงินยังไม่พร้อม กรุณาโหลดหน้าใหม่");
       return;
     }
 
@@ -330,7 +332,7 @@ export default function LiffTopupPage() {
               การชำระเงินล้มเหลว
             </h2>
             <p className="text-muted-foreground text-sm">
-              กรุณาตรวจสอบข้อมูลและลองใหม่อีกครั้ง
+              ตรวจสอบยอดในบัญชีธนาคารแล้วลองชำระอีกครั้ง
             </p>
           </div>
           <Button
@@ -341,7 +343,7 @@ export default function LiffTopupPage() {
               setQrUrl(null);
             }}
           >
-            ลองใหม่
+            กลับไปเลือกแพ็ก
           </Button>
         </div>
       </div>
@@ -394,7 +396,7 @@ export default function LiffTopupPage() {
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
             <h1 className="text-lg font-bold text-foreground">เติมเครดิต</h1>
             <p className="text-sm text-muted-foreground -mt-2">
-              เลือก Package ที่ต้องการ
+              เลือกจำนวนเงินที่ต้องการเติม
             </p>
 
             <div className="grid grid-cols-2 gap-3">
@@ -454,11 +456,13 @@ export default function LiffTopupPage() {
             {/* Value proposition */}
             <div className="bg-muted/40 rounded-2xl p-4 text-xs text-muted-foreground space-y-1">
               <p className="font-semibold text-foreground text-sm">
-                ทำไมต้องซื้อเครดิต?
+                เครดิตใช้ทำอะไร
               </p>
-              <p>✅ ใช้จองสนามได้ทันที ไม่ต้องรอ</p>
-              <p>✅ เครดิตไม่หมดอายุ 1 ปี</p>
-              <p>✅ ยิ่งซื้อเยอะ ยิ่งได้โบนัสเพิ่ม</p>
+              <ul className="list-disc list-inside space-y-1 text-pretty">
+                <li>จองคอร์ตได้ทันทีหลังเติม</li>
+                <li>เครดิตใช้ได้นาน 1 ปี</li>
+                <li>แพ็กใหญ่ได้โบนัสเพิ่ม</li>
+              </ul>
             </div>
           </div>
 
@@ -467,7 +471,7 @@ export default function LiffTopupPage() {
               className="w-full h-12 text-base font-semibold"
               onClick={() => setScreen("method")}
             >
-              ดำเนินการต่อ — ฿{pkg.label}
+              เลือกช่องทางชำระ · ฿{pkg.label}
             </Button>
           </div>
         </>
@@ -480,7 +484,7 @@ export default function LiffTopupPage() {
             {/* Package summary */}
             <div className="bg-card rounded-2xl p-4 border border-border">
               <p className="text-xs text-muted-foreground mb-1">
-                Package ที่เลือก
+                แพ็กที่เลือก
               </p>
               <div className="flex items-center justify-between">
                 <div>
@@ -516,9 +520,9 @@ export default function LiffTopupPage() {
                 <QrCode className="h-6 w-6 text-primary" />
               </div>
               <div className="flex-1">
-                <p className="font-bold text-foreground">PromptPay QR</p>
+                <p className="font-bold text-foreground">พร้อมเพย์ (QR)</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
-                  สแกน QR Code ผ่านแอปธนาคารหรือ LINE
+                  สแกนด้วยแอปธนาคารหรือ LINE Pay
                 </p>
               </div>
               {loading ? (
@@ -540,9 +544,7 @@ export default function LiffTopupPage() {
                 <CreditCard className="h-6 w-6 text-muted-foreground" />
               </div>
               <div className="flex-1">
-                <p className="font-bold text-foreground">
-                  Credit / Debit Card
-                </p>
+                <p className="font-bold text-foreground">บัตรเครดิต / เดบิต</p>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   Visa, Mastercard, JCB
                 </p>
@@ -558,7 +560,7 @@ export default function LiffTopupPage() {
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="bg-card rounded-2xl border border-border p-6 flex flex-col items-center gap-4">
             <p className="font-bold text-foreground">
-              สแกน QR Code เพื่อชำระเงิน
+              สแกน QR เพื่อชำระเงิน
             </p>
             <p className="text-sm text-muted-foreground">
               ฿{pkg.label} → {pkg.credits.toLocaleString()} เครดิต
@@ -568,7 +570,7 @@ export default function LiffTopupPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={qrUrl}
-                alt="PromptPay QR"
+                alt="QR พร้อมเพย์สำหรับชำระเงิน"
                 className="w-56 h-56 rounded-xl border border-border"
               />
             ) : (
@@ -663,7 +665,7 @@ export default function LiffTopupPage() {
                   </div>
                   <div>
                     <label className="text-xs text-muted-foreground mb-1.5 block">
-                      CVV / CVC
+                      รหัสหลังบัตร (CVV)
                     </label>
                     <Input
                       inputMode="numeric"
@@ -683,7 +685,7 @@ export default function LiffTopupPage() {
                     ชื่อบนบัตร (ถ้ามี)
                   </label>
                   <Input
-                    placeholder="FIRSTNAME LASTNAME"
+                    placeholder="ชื่อภาษาอังกฤษบนบัตร"
                     value={cardName}
                     onChange={(e) =>
                       setCardName(e.target.value.toUpperCase())
@@ -694,8 +696,8 @@ export default function LiffTopupPage() {
               </div>
             </div>
 
-            <p className="text-xs text-muted-foreground text-center flex items-center justify-center gap-1">
-              🔒 ข้อมูลบัตรถูกเข้ารหัสและประมวลผลโดย Omise อย่างปลอดภัย
+            <p className="text-xs text-muted-foreground text-center leading-relaxed text-pretty">
+              ข้อมูลบัตรเข้ารหัสและประมวลผลโดยผู้ให้บริการชำระเงินที่ได้รับการรับรอง
             </p>
           </div>
 
@@ -716,7 +718,7 @@ export default function LiffTopupPage() {
                   โหลดระบบชำระเงิน...
                 </>
               ) : (
-                `🔒 ชำระ ฿${pkg.label}`
+                `ชำระ ฿${pkg.label}`
               )}
             </Button>
           </div>

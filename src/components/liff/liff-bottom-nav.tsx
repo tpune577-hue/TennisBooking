@@ -17,11 +17,11 @@ const NAV_ITEMS: {
   label: string;
   icon: typeof Home;
 }[] = [
-  { href: "/liff/home", label: "Home", icon: Home },
-  { href: "/liff/me", label: "Me", icon: User },
-  { href: "/liff/bookings", label: "Booking", icon: CalendarDays },
-  { href: "/liff/topup", label: "Top up", icon: Wallet },
-  { href: "/liff/settings", label: "Settings", icon: Settings },
+  { href: "/liff/home", label: "หน้าแรก", icon: Home },
+  { href: "/liff/me", label: "ฉัน", icon: User },
+  { href: "/liff/bookings", label: "การจอง", icon: CalendarDays },
+  { href: "/liff/topup", label: "เติมเครดิต", icon: Wallet },
+  { href: "/liff/settings", label: "ตั้งค่า", icon: Settings },
 ];
 
 export function LiffBottomNav() {
@@ -30,7 +30,7 @@ export function LiffBottomNav() {
   return (
     <nav
       className="shrink-0 border-t border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80 pb-[env(safe-area-inset-bottom)]"
-      aria-label="Main navigation"
+      aria-label="เมนูหลัก"
     >
       <ul className="flex items-stretch justify-around px-1 pt-1">
         {NAV_ITEMS.map(({ href, label, icon: Icon }) => {
