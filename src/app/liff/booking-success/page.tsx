@@ -5,8 +5,9 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, Users, Loader2, QrCode } from "lucide-react";
+import { CheckCircle2, Loader2, QrCode, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { BookingPanel } from "@/components/liff/booking/booking-ui";
 import { BookingPartyPanel } from "@/components/access/booking-party-panel";
 
 function InviteModal({
@@ -26,13 +27,13 @@ function InviteModal({
 }) {
   return (
     <div
-      className="fixed inset-0 bg-black/55 flex items-end z-50"
+      className="fixed inset-0 bg-[var(--brand-ink)]/55 flex items-end z-50"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="bg-card rounded-t-3xl w-full max-w-[430px] mx-auto px-5 pb-10 animate-in slide-in-from-bottom-4 duration-300 max-h-[85vh] overflow-y-auto">
-        <div className="w-10 h-1 bg-border rounded-full mx-auto my-3" />
+      <div className="bg-card rounded-t-sm w-full max-w-[430px] mx-auto px-5 pb-10 animate-in slide-in-from-bottom-4 duration-300 max-h-[85vh] overflow-y-auto">
+        <div className="w-10 h-0.5 bg-border rounded-full mx-auto my-3" />
         <BookingPartyPanel
           bookingId={bookingId}
           courtName={courtName}
@@ -77,76 +78,86 @@ function SuccessContent() {
   }, [searchParams, bookingId]);
 
   return (
-    <div className="flex flex-col min-h-screen bg-muted/30">
+    <div className="flex flex-col min-h-screen bg-background">
       <div
         className={cn(
-          "w-full pt-16 pb-10 px-6 flex flex-col items-center text-center transition-all duration-500",
-          "bg-gradient-to-br from-[color:var(--chart-2)] to-emerald-700",
-          shown ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-4"
+          "w-full pt-16 pb-10 px-6 flex flex-col items-center text-center transition-[opacity,transform] duration-500 ease-out",
+          "bg-primary",
+          shown ? "opacity-100 translate-y-0" : "opacity-0 -translate-y-3"
         )}
       >
-        <div className="w-20 h-20 rounded-full bg-white/20 flex items-center justify-center mb-4">
-          <CheckCircle2 className="h-10 w-10 text-white" />
+        <div className="w-16 h-16 rounded-sm bg-white/15 flex items-center justify-center mb-4">
+          <CheckCircle2 className="h-9 w-9 text-primary-foreground" />
         </div>
-        <h1 className="text-2xl font-black text-white mb-1.5">จองสำเร็จ!</h1>
-        <p className="text-sm text-white/80">การจองของคุณได้รับการยืนยันแล้ว</p>
-        {ref && (
-          <div className="mt-3 bg-white/15 rounded-xl px-4 py-2">
-            <p className="text-white font-bold text-sm tracking-widest font-mono"># {ref}</p>
+        <h1 className="font-heading text-2xl font-medium text-primary-foreground mb-1">
+          จองสำเร็จ
+        </h1>
+        <p className="text-sm text-primary-foreground/85">
+          การยืนยันจะส่งถึงคุณผ่าน LINE ทันที
+        </p>
+        {ref ? (
+          <div className="mt-4 bg-white/12 rounded-sm px-4 py-2 border border-white/20">
+            <p className="text-primary-foreground font-mono text-sm font-semibold tracking-wider">
+              {ref}
+            </p>
           </div>
-        )}
+        ) : null}
       </div>
 
       <div className="flex-1 p-4 space-y-3">
-        <div className="bg-card rounded-2xl p-5 border border-border shadow-sm">
-          <p className="font-bold text-sm mb-4">📋 รายละเอียดการจอง</p>
-          <div className="space-y-3">
+        <BookingPanel>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-oak-deep)] mb-3">
+            รายละเอียดการจอง
+          </p>
+          <dl className="space-y-3 text-sm">
             <DetailRow label="วันที่" value={dateDisplay} />
             <DetailRow
               label="เวลา"
               value={`${String(startHour).padStart(2, "0")}:00 – ${String(endHour).padStart(2, "0")}:00`}
             />
-            <DetailRow label="สนาม" value={courtName} />
-            {coachName && <DetailRow label="โค้ช" value={coachName} />}
-            {total > 0 && (
-              <DetailRow label="ชำระแล้ว" value={`${total} เครดิต`} highlight />
-            )}
-          </div>
-        </div>
+            <DetailRow label="คอร์ต" value={courtName} />
+            {coachName ? <DetailRow label="โค้ช" value={coachName} /> : null}
+            {total > 0 ? (
+              <DetailRow
+                label="ชำระแล้ว"
+                value={`${total.toLocaleString()} เครดิต`}
+                highlight
+              />
+            ) : null}
+          </dl>
+        </BookingPanel>
 
-        {bookingId && (
+        {bookingId ? (
           <Button
-            className="w-full h-12 text-base font-semibold gap-2"
-            variant="secondary"
+            variant="outline"
+            className="w-full h-12 rounded-sm text-sm font-semibold gap-2 border-primary text-primary hover:bg-primary/5"
             onClick={() => router.push(`/liff/access?bookingId=${bookingId}`)}
           >
             <QrCode className="h-5 w-5" />
             ดู QR เข้าสนาม
           </Button>
-        )}
+        ) : null}
 
         <button
           type="button"
           onClick={() => setShowInviteModal(true)}
-          className="w-full flex items-center gap-4 p-5 rounded-2xl text-left transition-all active:scale-[0.99]"
-          style={{
-            background: "linear-gradient(135deg, #f59e0b 0%, #d97706 100%)",
-          }}
+          className="w-full flex items-center gap-4 p-4 rounded-sm text-left border border-[var(--brand-oak)] bg-[color-mix(in_oklch,var(--brand-paper),var(--brand-oak)_12%)] transition-transform active:scale-[0.995]"
         >
-          <div className="bg-white/25 rounded-xl p-2.5 shrink-0">
-            <Users className="h-5 w-5 text-white" />
+          <div className="bg-[var(--brand-oak)]/20 rounded-sm p-2.5 shrink-0">
+            <Users className="h-5 w-5 text-[var(--brand-oak-deep)]" />
           </div>
-          <div className="flex-1">
-            <p className="text-white font-extrabold text-base leading-tight">
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold text-sm text-foreground leading-tight">
               ชวนเพื่อนมาเล่นด้วยกัน
             </p>
-            <p className="text-white/85 text-sm mt-0.5">สร้างลิงก์เชิญ แชร์ผ่าน LINE ได้เลย</p>
+            <p className="text-xs text-muted-foreground mt-0.5">
+              สร้างลิงก์เชิญและแชร์ผ่าน LINE
+            </p>
           </div>
-          <span className="text-white/80 text-xl">›</span>
         </button>
 
         <Button
-          className="w-full h-12 text-base font-semibold"
+          className="w-full h-12 rounded-sm btn-brand text-sm font-semibold tracking-wide uppercase"
           onClick={() => router.push("/liff/bookings")}
         >
           ดูการจองของฉัน
@@ -154,14 +165,14 @@ function SuccessContent() {
 
         <Button
           variant="outline"
-          className="w-full h-12 text-base font-semibold"
+          className="w-full h-12 rounded-sm text-sm font-semibold"
           onClick={() => router.push("/liff/book")}
         >
-          จองสนามอีกครั้ง
+          จองคอร์ตอีกครั้ง
         </Button>
       </div>
 
-      {showInviteModal && bookingId && (
+      {showInviteModal && bookingId ? (
         <InviteModal
           bookingId={bookingId}
           courtName={courtName}
@@ -170,7 +181,7 @@ function SuccessContent() {
           coachName={coachName}
           onClose={() => setShowInviteModal(false)}
         />
-      )}
+      ) : null}
     </div>
   );
 }
@@ -199,16 +210,16 @@ function DetailRow({
   highlight?: boolean;
 }) {
   return (
-    <div className="flex justify-between text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span
+    <div className="flex justify-between gap-3">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd
         className={cn(
-          "font-semibold",
-          highlight ? "text-[color:var(--chart-2)] font-extrabold" : "text-foreground"
+          "font-semibold text-right",
+          highlight ? "text-primary tabular-nums" : "text-foreground"
         )}
       >
         {value}
-      </span>
+      </dd>
     </div>
   );
 }

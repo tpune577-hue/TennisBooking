@@ -7,10 +7,16 @@ import { useLiff } from "@/lib/liff/provider";
 import { useCreditBalance } from "@/hooks/use-credit-balance";
 import { format, addDays, startOfDay } from "date-fns";
 import { th } from "date-fns/locale";
-import { ChevronLeft, Clock, Coins, Loader2, Zap } from "lucide-react";
+import { Clock, Loader2, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
+import {
+  BookingChip,
+  BookingField,
+  BookingPanel,
+  LiffBookingHeader,
+} from "@/components/liff/booking/booking-ui";
 
 type Court = {
   id: string;
@@ -42,28 +48,10 @@ type TimeSlot = {
 };
 
 const COURT_TYPE_LABELS = {
-  outdoor: {
-    label: "Outdoor",
-    color: "bg-[color:var(--chart-2)]/10 text-[color:var(--chart-2)] border-[color:var(--chart-2)]/25",
-  },
-  indoor: {
-    label: "Indoor",
-    color: "bg-primary/10 text-primary border-primary/25",
-  },
-  clay: {
-    label: "Clay",
-    color: "bg-[color:var(--chart-3)]/10 text-[color:var(--chart-3)] border-[color:var(--chart-3)]/25",
-  },
-};
-
-function Section({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="bg-card rounded-2xl p-4 shadow-sm border border-border">
-      <p className="font-bold text-sm text-foreground mb-3">{label}</p>
-      {children}
-    </div>
-  );
-}
+  outdoor: "Outdoor",
+  indoor: "Indoor",
+  clay: "Clay",
+} as const;
 
 function SelectContent() {
   const searchParams = useSearchParams();
@@ -92,14 +80,12 @@ function SelectContent() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [loadingCoaches, setLoadingCoaches] = useState(false);
 
-  // Auth redirect
   useEffect(() => {
     if (status === "unauthenticated") {
       router.push("/sign-in?callbackUrl=/liff/book");
     }
   }, [status, router]);
 
-  // Load courts once on mount
   useEffect(() => {
     fetch("/api/courts")
       .then((r) => r.json())
@@ -108,7 +94,6 @@ function SelectContent() {
       .finally(() => setLoadingCourts(false));
   }, []);
 
-  // Load slots when court or date changes
   useEffect(() => {
     if (!selectedCourt) return;
     setLoadingSlots(true);
@@ -127,7 +112,6 @@ function SelectContent() {
       .finally(() => setLoadingSlots(false));
   }, [selectedCourt, selectedDate]);
 
-  // Load coaches when time range is selected (court_with_coach only)
   useEffect(() => {
     if (
       bookingType !== "court_with_coach" ||
@@ -155,6 +139,8 @@ function SelectContent() {
     selectedCoach && startHour !== null && endHour !== null
       ? selectedCoach.pricePerHour * (endHour - startHour)
       : 0;
+
+  const totalCost = courtCost + coachCost;
 
   const canProceed =
     selectedCourt !== null &&
@@ -229,350 +215,284 @@ function SelectContent() {
   }
 
   return (
-    <>
-      {/* Sticky header */}
-      <div className="sticky top-0 z-10 bg-card border-b border-border">
-        <div className="flex items-center gap-3 px-4 py-4">
-          <button
-            onClick={() => router.back()}
-            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <div className="flex-1">
-            <h1 className="text-base font-bold">เลือกสนามและเวลา</h1>
-            <p className="text-xs text-muted-foreground">
-              {bookingType === "court_with_coach"
-                ? "จองสนาม + โค้ช"
-                : "จองสนามอย่างเดียว"}
-            </p>
-          </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            <Coins className="h-3.5 w-3.5 text-amber-400" />
-            <span className="font-semibold tabular-nums">{creditBalance}</span>
-          </div>
-        </div>
-      </div>
+    <div className="flex flex-col flex-1 min-h-0 bg-background">
+      <LiffBookingHeader
+        title="เลือกสนามและเวลา"
+        subtitle={
+          bookingType === "court_with_coach"
+            ? "จองสนามพร้อมโค้ช"
+            : "จองสนามอย่างเดียว"
+        }
+        onBack={() => router.back()}
+        creditBalance={creditBalance}
+      />
 
-      {/* Scrollable content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-3 pb-28">
-
-        {/* Date strip */}
-        <Section label="📅 เลือกวันที่">
-          <div className="flex gap-2 overflow-x-auto pb-1 -mx-1 px-1">
-            {days.map((day, i) => {
-              const isToday = i === 0;
-              const isActive =
-                format(day, "yyyy-MM-dd") ===
-                format(selectedDate, "yyyy-MM-dd");
-              return (
-                <button
-                  key={day.toISOString()}
-                  onClick={() => {
-                    setSelectedDate(day);
-                    setStartHour(null);
-                    setEndHour(null);
-                  }}
-                  className={cn(
-                    "min-w-[56px] flex-none flex flex-col items-center py-2.5 px-1 rounded-2xl border-2 transition-all",
-                    isActive
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background text-foreground hover:border-primary/40"
-                  )}
-                >
-                  <span className="text-[10px] font-semibold opacity-80 uppercase">
-                    {format(day, "EEE", { locale: th })}
-                  </span>
-                  <span className="text-xl font-black leading-tight">
-                    {format(day, "d")}
-                  </span>
-                  {isToday && (
-                    <span
-                      className={cn(
-                        "text-[9px] font-bold",
-                        isActive ? "opacity-80" : "text-primary"
-                      )}
-                    >
-                      วันนี้
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
-        </Section>
-
-        {/* Court selection */}
-        <Section label="🏟️ เลือกสนาม">
-          {loadingCourts ? (
-            <div className="flex justify-center py-4">
-              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-            </div>
-          ) : (
-            <div className="space-y-2">
-              {courts.map((court) => {
-                const isActive = selectedCourt?.id === court.id;
-                const typeInfo = COURT_TYPE_LABELS[court.type];
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-5 pb-28">
+        <BookingPanel className="space-y-5">
+          <BookingField step="1" label="เลือกวัน">
+            <div className="flex gap-2 overflow-x-auto pb-0.5 -mx-0.5">
+              {days.map((day, i) => {
+                const isToday = i === 0;
+                const isActive =
+                  format(day, "yyyy-MM-dd") ===
+                  format(selectedDate, "yyyy-MM-dd");
                 return (
-                  <button
-                    key={court.id}
-                    onClick={() => setSelectedCourt(court)}
-                    className={cn(
-                      "w-full flex items-center justify-between px-4 py-3.5 rounded-2xl border-2 transition-all text-left",
-                      isActive
-                        ? "border-primary bg-primary/10"
-                        : "border-border bg-background hover:border-primary/30"
-                    )}
+                  <BookingChip
+                    key={day.toISOString()}
+                    variant="date"
+                    pressed={isActive}
+                    onClick={() => {
+                      setSelectedDate(day);
+                      setStartHour(null);
+                      setEndHour(null);
+                    }}
                   >
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <p
-                          className={cn(
-                            "font-bold text-sm",
-                            isActive ? "text-primary" : "text-foreground"
-                          )}
-                        >
-                          {court.name}
-                        </p>
-                        <span
-                          className={cn(
-                            "text-xs font-semibold px-2 py-0.5 rounded-full border",
-                            typeInfo.color
-                          )}
-                        >
-                          {typeInfo.label}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>
-                          {court.openTime} – {court.closeTime}
-                        </span>
-                      </div>
-                    </div>
-                    {court.pricing && (
-                      <div className="text-right shrink-0 ml-3">
-                        <p
-                          className={cn(
-                            "text-sm font-bold tabular-nums",
-                            isActive ? "text-primary" : "text-foreground"
-                          )}
-                        >
-                          {court.pricing.offPeakPricePerHour} cr/ชม.
-                        </p>
-                        <p className="text-[11px] text-muted-foreground flex items-center gap-0.5 justify-end">
-                          <Zap className="h-2.5 w-2.5 text-amber-400" />
-                          Peak {court.pricing.peakPricePerHour}
-                        </p>
-                      </div>
-                    )}
-                  </button>
+                    <span className="text-[10px] uppercase tracking-wide opacity-80">
+                      {format(day, "EEE", { locale: th })}
+                    </span>
+                    <b className="font-heading text-lg font-medium leading-none">
+                      {format(day, "d")}
+                    </b>
+                    {isToday ? (
+                      <span className="text-[9px] font-semibold opacity-80">
+                        วันนี้
+                      </span>
+                    ) : null}
+                  </BookingChip>
                 );
               })}
             </div>
-          )}
-        </Section>
+          </BookingField>
 
-        {/* Time slot grid */}
-        {selectedCourt && (
-          <Section label="⏰ เลือกช่วงเวลา">
-            {loadingSlots ? (
-              <div className="flex justify-center py-4">
+          <BookingField step="2" label="เลือกคอร์ต">
+            {loadingCourts ? (
+              <div className="flex justify-center py-6">
                 <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
               </div>
             ) : (
-              <>
-                {pendingStart !== null && (
-                  <p className="text-xs text-primary animate-pulse mb-2">
-                    เลือกเวลาสิ้นสุด...
-                  </p>
-                )}
-                <div className="grid grid-cols-4 gap-2">
-                  {slots.map((slot) => {
-                    const inRange = isInRange(slot.hour);
-                    const isNight = slot.hour >= 18;
-                    return (
-                      <button
-                        key={slot.hour}
-                        onClick={() => handleSlotClick(slot)}
-                        disabled={!slot.available}
-                        className={cn(
-                          "rounded-xl border py-2.5 text-center text-sm transition-all",
-                          !slot.available &&
-                            "bg-muted/20 text-muted-foreground/40 border-border/30 cursor-not-allowed",
-                          slot.available &&
-                            !inRange &&
-                            "border-border bg-background text-foreground hover:border-primary/50 hover:bg-primary/5",
-                          inRange &&
-                            !slot.isPeak &&
-                            "bg-primary text-primary-foreground border-primary",
-                          inRange &&
-                            slot.isPeak &&
-                            "bg-amber-500 text-white border-amber-500"
-                        )}
-                      >
-                        <div className="font-semibold">
-                          {String(slot.hour).padStart(2, "0")}:00
-                        </div>
-                        {slot.available && !inRange && (
-                          <div className="text-[9px] mt-0.5 leading-none">
-                            {slot.isPeak ? (
-                              <span className="text-amber-500">⚡</span>
-                            ) : isNight ? (
-                              "🌙"
-                            ) : null}
-                          </div>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="flex gap-4 mt-3 text-xs text-muted-foreground">
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-3 w-3 rounded bg-primary inline-block" />
-                    เลือกแล้ว
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-3 w-3 rounded bg-amber-500 inline-block" />
-                    Peak
-                  </span>
-                  <span className="flex items-center gap-1.5">
-                    <span className="h-3 w-3 rounded bg-muted/30 border border-border/30 inline-block" />
-                    ไม่ว่าง
-                  </span>
-                </div>
-
-                {startHour !== null && endHour !== null && (
-                  <div className="mt-3 rounded-xl bg-muted/30 border border-border p-3 space-y-1.5 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">ช่วงเวลา</span>
-                      <span className="font-semibold">
-                        {String(startHour).padStart(2, "0")}:00 –{" "}
-                        {String(endHour).padStart(2, "0")}:00 (
-                        {endHour - startHour} ชม.)
+              <div className="flex flex-wrap gap-2">
+                {courts.map((court) => {
+                  const isActive = selectedCourt?.id === court.id;
+                  return (
+                    <BookingChip
+                      key={court.id}
+                      pressed={isActive}
+                      onClick={() => setSelectedCourt(court)}
+                      className="min-w-[120px]"
+                    >
+                      <span className="block font-semibold text-[13px]">
+                        {court.name}
                       </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-muted-foreground">ค่าสนาม</span>
-                      <span className="font-semibold tabular-nums">
-                        {courtCost} เครดิต
+                      <span className="block text-[10px] opacity-80 mt-0.5">
+                        {COURT_TYPE_LABELS[court.type]}
                       </span>
-                    </div>
-                  </div>
-                )}
-
-                {pendingStart !== null && (
-                  <button
-                    onClick={() => setPendingStart(null)}
-                    className="mt-2 text-xs text-muted-foreground underline w-full text-center"
-                  >
-                    ยกเลิกการเลือก
-                  </button>
-                )}
-              </>
+                    </BookingChip>
+                  );
+                })}
+              </div>
             )}
-          </Section>
-        )}
+            {selectedCourt ? (
+              <p className="text-xs text-muted-foreground flex items-center gap-1 mt-2">
+                <Clock className="h-3 w-3 shrink-0" />
+                เปิด {selectedCourt.openTime} – {selectedCourt.closeTime}
+                {selectedCourt.pricing ? (
+                  <>
+                    {" "}
+                    · Off-peak {selectedCourt.pricing.offPeakPricePerHour} cr
+                  </>
+                ) : null}
+              </p>
+            ) : null}
+          </BookingField>
 
-        {/* Coach selection */}
+          {selectedCourt ? (
+            <BookingField step="3" label="เลือกเวลา">
+              {loadingSlots ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <>
+                  {pendingStart !== null ? (
+                    <p className="text-xs text-primary mb-2">
+                      เลือกเวลาสิ้นสุดของช่วงที่ต้องการ
+                    </p>
+                  ) : null}
+                  <div className="grid grid-cols-[repeat(auto-fill,minmax(86px,1fr))] gap-2">
+                    {slots.map((slot) => {
+                      const inRange = isInRange(slot.hour);
+                      const peakInRange =
+                        inRange &&
+                        slot.isPeak &&
+                        startHour !== null &&
+                        endHour !== null;
+                      return (
+                        <BookingChip
+                          key={slot.hour}
+                          variant="slot"
+                          disabled={!slot.available}
+                          pressed={inRange && !peakInRange}
+                          onClick={() => handleSlotClick(slot)}
+                          className={cn(
+                            peakInRange &&
+                              "!border-[var(--brand-oak-deep)] !bg-[var(--brand-oak-deep)] !text-white",
+                            inRange &&
+                              pendingStart !== null &&
+                              "!border-primary !bg-primary !text-primary-foreground"
+                          )}
+                        >
+                          {String(slot.hour).padStart(2, "0")}:00
+                          {slot.available && !inRange && slot.isPeak ? (
+                            <span className="block text-[9px] mt-0.5 text-[var(--brand-oak-deep)]">
+                              Peak
+                            </span>
+                          ) : null}
+                        </BookingChip>
+                      );
+                    })}
+                  </div>
+
+                  <div className="flex flex-wrap gap-4 mt-3 text-xs text-muted-foreground">
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-3 w-3 rounded-sm bg-primary inline-block" />
+                      เลือกแล้ว
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="h-3 w-3 rounded-sm bg-[var(--brand-oak-deep)] inline-block" />
+                      Peak
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <Zap className="h-3 w-3 text-[var(--brand-oak)]" />
+                      ช่วง Peak คิดเครดิตสูงกว่า
+                    </span>
+                  </div>
+
+                  {startHour !== null && endHour !== null ? (
+                    <div className="mt-3 rounded-sm border border-border bg-[var(--brand-paper)] p-3 space-y-1.5 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">ช่วงเวลา</span>
+                        <span className="font-semibold tabular-nums">
+                          {String(startHour).padStart(2, "0")}:00 –{" "}
+                          {String(endHour).padStart(2, "0")}:00 (
+                          {endHour - startHour} ชม.)
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">ค่าสนาม</span>
+                        <span className="font-semibold tabular-nums">
+                          {courtCost} เครดิต
+                        </span>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {pendingStart !== null ? (
+                    <button
+                      type="button"
+                      onClick={() => setPendingStart(null)}
+                      className="mt-2 text-xs text-muted-foreground underline w-full text-center"
+                    >
+                      ยกเลิกการเลือกเวลา
+                    </button>
+                  ) : null}
+                </>
+              )}
+            </BookingField>
+          ) : null}
+        </BookingPanel>
+
         {bookingType === "court_with_coach" &&
           startHour !== null &&
           endHour !== null && (
-            <Section label="👨‍🏫 เลือกโค้ช">
-              {loadingCoaches ? (
-                <div className="flex justify-center py-4">
-                  <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-                </div>
-              ) : coaches.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-4">
-                  ไม่มีโค้ชว่างในขณะนี้
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {coaches.map((coach) => {
-                    const isActive = selectedCoach?.id === coach.id;
-                    const initials = coach.name
-                      .split(" ")
-                      .map((n: string) => n[0])
-                      .join("")
-                      .slice(0, 2)
-                      .toUpperCase();
-                    return (
-                      <button
-                        key={coach.id}
-                        onClick={() => setSelectedCoach(coach)}
-                        className={cn(
-                          "w-full flex items-center gap-3 px-4 py-3 rounded-2xl border-2 transition-all",
-                          isActive
-                            ? "border-amber-400 bg-amber-50 dark:bg-amber-950/20"
-                            : "border-border bg-background hover:border-amber-300"
-                        )}
-                      >
-                        <div
+            <BookingPanel>
+              <BookingField step="4" label="เลือกโค้ช">
+                {loadingCoaches ? (
+                  <div className="flex justify-center py-6">
+                    <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+                  </div>
+                ) : coaches.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    ไม่มีโค้ชว่างในขณะนี้
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {coaches.map((coach) => {
+                      const isActive = selectedCoach?.id === coach.id;
+                      const initials = coach.name
+                        .split(" ")
+                        .map((n: string) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase();
+                      return (
+                        <button
+                          key={coach.id}
+                          type="button"
+                          onClick={() => setSelectedCoach(coach)}
                           className={cn(
-                            "h-11 w-11 rounded-full flex items-center justify-center text-sm font-bold shrink-0 overflow-hidden",
+                            "w-full flex items-center gap-3 px-4 py-3 rounded-sm border transition-colors text-left",
                             isActive
-                              ? "bg-amber-200 text-amber-800"
-                              : "bg-muted text-muted-foreground"
+                              ? "border-primary bg-[color-mix(in_oklch,var(--brand-paper),var(--primary)_8%)]"
+                              : "border-border bg-[var(--brand-paper)] hover:border-[var(--brand-oak)]"
                           )}
                         >
-                          {coach.avatarUrl ? (
-                            // eslint-disable-next-line @next/next/no-img-element
-                            <img
-                              src={coach.avatarUrl}
-                              alt={coach.name}
-                              className="h-full w-full object-cover"
-                            />
-                          ) : (
-                            initials
-                          )}
-                        </div>
-                        <div className="flex-1 text-left min-w-0">
-                          <p
+                          <div
                             className={cn(
-                              "font-bold text-sm",
-                              isActive ? "text-amber-700" : "text-foreground"
+                              "h-11 w-11 rounded-sm flex items-center justify-center text-sm font-semibold shrink-0 overflow-hidden",
+                              isActive
+                                ? "bg-primary/15 text-primary"
+                                : "bg-muted text-muted-foreground"
                             )}
                           >
-                            {coach.name}
-                          </p>
-                          {coach.bio && (
-                            <p className="text-xs text-muted-foreground truncate">
-                              {coach.bio}
+                            {coach.avatarUrl ? (
+                              // eslint-disable-next-line @next/next/no-img-element
+                              <img
+                                src={coach.avatarUrl}
+                                alt={coach.name}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              initials
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-semibold text-sm text-foreground">
+                              {coach.name}
                             </p>
-                          )}
-                        </div>
-                        <p
-                          className={cn(
-                            "text-sm font-bold tabular-nums shrink-0",
-                            isActive ? "text-amber-700" : "text-foreground"
-                          )}
-                        >
-                          +{coach.pricePerHour} cr/ชม.
-                        </p>
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </Section>
+                            {coach.bio ? (
+                              <p className="text-xs text-muted-foreground truncate">
+                                {coach.bio}
+                              </p>
+                            ) : null}
+                          </div>
+                          <p className="text-sm font-semibold tabular-nums shrink-0 text-muted-foreground">
+                            +{coach.pricePerHour} cr/ชม.
+                          </p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </BookingField>
+            </BookingPanel>
           )}
       </div>
 
-      {/* Sticky bottom CTA */}
-      <div className="sticky bottom-0 bg-background/95 backdrop-blur border-t border-border px-4 py-4">
+      <div className="sticky bottom-0 border-t border-border bg-card/95 backdrop-blur px-4 py-4">
         <Button
-          className="w-full h-12 text-base font-semibold"
+          className={cn(
+            "w-full h-12 rounded-sm text-sm font-semibold tracking-wide uppercase",
+            canProceed && "btn-brand"
+          )}
           onClick={handleNext}
           disabled={!canProceed}
         >
           {canProceed
-            ? `ถัดไป — รวม ${courtCost + coachCost} เครดิต`
+            ? `ถัดไป · ${totalCost.toLocaleString()} เครดิต`
             : "เลือกให้ครบก่อน"}
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 

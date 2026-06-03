@@ -20,6 +20,12 @@
 # production
 /build
 
+# personal / local-only Cursor skills (see ~/.cursor/skills/)
+.cursor/skills/impeccable/
+
+# impeccable live-mode runtime (project-local, not shared)
+.impeccable/
+
 # misc
 .DS_Store
 *.pem

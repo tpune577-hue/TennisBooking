@@ -7,40 +7,15 @@ import { useLiff } from "@/lib/liff/provider";
 import { useCreditBalance } from "@/hooks/use-credit-balance";
 import { format } from "date-fns";
 import { th } from "date-fns/locale";
-import {
-  AlertCircle,
-  CalendarDays,
-  ChevronLeft,
-  Clock,
-  Coins,
-  CreditCard,
-  Loader2,
-  MapPin,
-  User,
-} from "lucide-react";
+import { AlertCircle, CreditCard, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-
-function InfoRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-start justify-between text-sm gap-3">
-      <span className="flex items-center gap-2 text-muted-foreground shrink-0">
-        {icon}
-        {label}
-      </span>
-      <span className="font-semibold text-right text-foreground">{value}</span>
-    </div>
-  );
-}
+import {
+  BookingPanel,
+  BookingSummary,
+  LiffBookingHeader,
+} from "@/components/liff/booking/booking-ui";
 
 function ConfirmContent() {
   const searchParams = useSearchParams();
@@ -77,8 +52,10 @@ function ConfirmContent() {
     courtType === "indoor"
       ? "Indoor"
       : courtType === "clay"
-      ? "Clay"
-      : "Outdoor";
+        ? "Clay"
+        : "Outdoor";
+
+  const timeRange = `${String(startHour).padStart(2, "0")}:00 – ${String(endHour).padStart(2, "0")}:00`;
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -86,7 +63,6 @@ function ConfirmContent() {
     }
   }, [status, router]);
 
-  // Redirect back if missing required params
   useEffect(() => {
     if (!courtId || !date || !startHour || !endHour) {
       router.replace("/liff/book");
@@ -152,177 +128,119 @@ function ConfirmContent() {
     );
   }
 
+  const summaryRows = [
+    { label: "วัน", value: dateDisplay || "—" },
+    { label: "คอร์ต", value: courtName },
+    { label: "ประเภท", value: `${courtTypeLabel} · ${durationHours} ชม.` },
+    { label: "เวลา", value: timeRange },
+  ];
+  if (coachName) {
+    summaryRows.push({ label: "โค้ช", value: coachName });
+  }
+
   return (
-    <>
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-card border-b border-border">
-        <div className="flex items-center gap-3 px-4 py-4">
-          <button
-            onClick={() => router.back()}
-            className="p-1.5 rounded-lg hover:bg-muted transition-colors"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <h1 className="text-lg font-bold">ยืนยันการจอง</h1>
-        </div>
-      </div>
+    <div className="flex flex-col flex-1 min-h-0 bg-background">
+      <LiffBookingHeader
+        title="ยืนยันการจอง"
+        subtitle="ตรวจสอบรายละเอียดก่อนชำระด้วยเครดิต"
+        onBack={() => router.back()}
+        creditBalance={creditBalance}
+      />
 
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 pb-6">
+        <BookingSummary
+          rows={summaryRows}
+          totalValue={
+            totalCost > 0 ? `${totalCost.toLocaleString()} cr` : "—"
+          }
+          note="ชำระด้วยเครดิตคงเหลือ · เติมผ่าน PromptPay"
+          action={
+            <Button
+              className="w-full h-12 rounded-sm btn-brand text-sm font-semibold tracking-wide uppercase"
+              onClick={handleConfirm}
+              disabled={balanceLoading || !hasEnoughCredits || confirming}
+            >
+              {confirming ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  กำลังจอง...
+                </>
+              ) : (
+                "ยืนยันการจอง"
+              )}
+            </Button>
+          }
+        />
 
-        {/* Summary card */}
-        <div className="bg-card rounded-2xl p-5 border border-border shadow-sm">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-12 h-12 bg-[color:var(--chart-2)]/10 rounded-2xl flex items-center justify-center text-2xl select-none">
-              🎾
-            </div>
-            <div>
-              <p className="font-bold text-base">{courtName}</p>
-              <p className="text-sm text-muted-foreground">{courtTypeLabel} Court</p>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <InfoRow
-              icon={<CalendarDays className="h-4 w-4" />}
-              label="วันที่"
-              value={dateDisplay}
-            />
-            <InfoRow
-              icon={<Clock className="h-4 w-4" />}
-              label="เวลา"
-              value={`${String(startHour).padStart(2, "0")}:00 – ${String(endHour).padStart(2, "0")}:00 (${durationHours} ชม.)`}
-            />
-            <InfoRow
-              icon={<MapPin className="h-4 w-4" />}
-              label="สนาม"
-              value={courtName}
-            />
-            {coachName && (
-              <InfoRow
-                icon={<User className="h-4 w-4" />}
-                label="โค้ช"
-                value={coachName}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* Price breakdown */}
-        <div className="bg-card rounded-2xl p-5 border border-border shadow-sm">
-          <p className="font-bold text-sm mb-4">สรุปค่าใช้จ่าย</p>
-          <div className="space-y-3">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">ค่าสนาม ({courtName})</span>
-              <span className="font-semibold tabular-nums">{courtCost} เครดิต</span>
-            </div>
-            {coachCost > 0 && coachName && (
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">ค่าโค้ช ({coachName})</span>
-                <span className="font-semibold tabular-nums">{coachCost} เครดิต</span>
+        {(courtCost > 0 || coachCost > 0) && (
+          <BookingPanel>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-oak-deep)] mb-3">
+              รายละเอียดค่าใช้จ่าย
+            </p>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between gap-3">
+                <span className="text-muted-foreground">ค่าสนาม</span>
+                <span className="font-semibold tabular-nums">
+                  {courtCost.toLocaleString()} cr
+                </span>
               </div>
-            )}
-            <div className="border-t border-dashed border-border pt-3 flex justify-between items-center">
-              <span className="font-bold text-base">รวมทั้งหมด</span>
-              <span className="font-black text-xl text-primary tabular-nums">
-                {totalCost} เครดิต
-              </span>
+              {coachCost > 0 && coachName ? (
+                <div className="flex justify-between gap-3">
+                  <span className="text-muted-foreground">ค่าโค้ช</span>
+                  <span className="font-semibold tabular-nums">
+                    {coachCost.toLocaleString()} cr
+                  </span>
+                </div>
+              ) : null}
             </div>
-          </div>
-        </div>
+          </BookingPanel>
+        )}
 
-        {/* Credit balance */}
         <div
           className={cn(
-            "rounded-2xl p-4 border flex items-start gap-3",
+            "rounded-sm p-4 border flex items-start gap-3",
             hasEnoughCredits
-              ? "bg-[color:var(--chart-2)]/8 border-[color:var(--chart-2)]/25"
+              ? "bg-[color-mix(in_oklch,var(--brand-paper),var(--primary)_6%)] border-primary/25"
               : "bg-destructive/8 border-destructive/25"
           )}
         >
           {hasEnoughCredits ? (
-            <CreditCard className="h-5 w-5 text-[color:var(--chart-2)] shrink-0 mt-0.5" />
+            <CreditCard className="h-5 w-5 text-primary shrink-0 mt-0.5" />
           ) : (
             <AlertCircle className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
           )}
-          <div className="flex-1">
+          <div className="flex-1 min-w-0">
             <p
               className={cn(
-                "font-bold text-sm",
-                hasEnoughCredits
-                  ? "text-[color:var(--chart-2)]"
-                  : "text-destructive"
+                "font-semibold text-sm",
+                hasEnoughCredits ? "text-foreground" : "text-destructive"
               )}
             >
-              {hasEnoughCredits ? "ชำระด้วยเครดิต" : "เครดิตไม่เพียงพอ"}
+              {hasEnoughCredits ? "เครดิตเพียงพอ" : "เครดิตไม่เพียงพอ"}
             </p>
-            <p className="text-xs text-muted-foreground mt-0.5">
-              เครดิตปัจจุบัน{" "}
-              <span className="font-semibold tabular-nums">{creditBalance}</span> cr
+            <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
               {hasEnoughCredits
-                ? ` → หลังจ่าย ${remaining} cr`
-                : ` · ขาดอีก ${totalCost - creditBalance} cr`}
+                ? `หลังยืนยันเหลือ ${remaining.toLocaleString()} cr`
+                : `ขาดอีก ${(totalCost - creditBalance).toLocaleString()} cr · เติมเครดิตก่อนจอง`}
             </p>
-          </div>
-          <div className="flex items-center gap-1 shrink-0">
-            <Coins className="h-3.5 w-3.5 text-amber-400" />
-            <span className="font-bold text-sm tabular-nums">{creditBalance}</span>
           </div>
         </div>
 
-        {!hasEnoughCredits && (
+        {!hasEnoughCredits ? (
           <Button
             variant="outline"
-            className="w-full border-primary text-primary hover:bg-primary/10"
+            className="w-full h-11 rounded-sm border-primary text-primary hover:bg-primary/5"
             onClick={() => router.push("/liff/topup")}
           >
             เติมเครดิต
           </Button>
-        )}
+        ) : null}
 
-        {/* Omise payment mockup */}
-        <div className="bg-muted/30 rounded-2xl p-4 border border-dashed border-border">
-          <p className="text-xs text-muted-foreground text-center font-semibold mb-3">
-            🔒 OMISE PAYMENT GATEWAY (Mockup)
-          </p>
-          <div className="flex gap-2">
-            {[
-              { icon: "💳", label: "บัตรเครดิต" },
-              { icon: "🏦", label: "โอนเงิน" },
-              { icon: "📱", label: "PromptPay" },
-            ].map((item) => (
-              <div
-                key={item.label}
-                className="flex-1 bg-card rounded-xl py-2.5 text-center border border-border opacity-50"
-              >
-                <div className="text-lg">{item.icon}</div>
-                <div className="text-[10px] text-muted-foreground mt-0.5">
-                  {item.label}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <Button
-          className="w-full h-12 text-base font-semibold"
-          onClick={handleConfirm}
-          disabled={balanceLoading || !hasEnoughCredits || confirming}
-        >
-          {confirming ? (
-            <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              กำลังจอง...
-            </>
-          ) : (
-            `ยืนยันและชำระ — ${totalCost} เครดิต`
-          )}
-        </Button>
-
-        <p className="text-xs text-muted-foreground text-center pb-4">
+        <p className="text-xs text-muted-foreground text-center leading-relaxed pb-2">
           ยกเลิกได้ฟรีก่อน 24 ชั่วโมง · เครดิตคืนทันที
         </p>
       </div>
-    </>
+    </div>
   );
 }
 
