@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { Button } from "@/components/ui/button";
+import {
+  MemberProfileForm,
+  type MemberProfileFormValues,
+} from "@/components/auth/member-profile-form";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,11 +24,18 @@ export const dynamic = "force-dynamic";
 interface Member {
   id: string;
   name: string;
+  firstName: string | null;
+  lastName: string | null;
   email: string | null;
   phone: string | null;
+  dateOfBirth: string | null;
+  gender: "male" | "female" | "unspecified" | null;
   role: string;
   creditBalance: number;
   isActive: boolean;
+  isPhoneVerified: boolean;
+  isEmailVerified: boolean;
+  lineUserId: string | null;
   createdAt: string;
   avatarUrl: string | null;
   tier: { name: string } | null;
@@ -37,7 +49,23 @@ const ROLE_LABELS: Record<string, string> = {
   super_admin: "ผู้ดูแล",
 };
 
+function memberToForm(m: Member): MemberProfileFormValues {
+  const parts = m.name.trim().split(/\s+/);
+  return {
+    firstName: m.firstName ?? parts[0] ?? "",
+    lastName: m.lastName ?? parts.slice(1).join(" ") ?? "",
+    phone: m.phone?.replace(/^\+66/, "0") ?? "",
+    email: m.email ?? "",
+    dateOfBirth: m.dateOfBirth?.slice(0, 10) ?? "",
+    gender: m.gender ?? "",
+  };
+}
+
 export default function MembersPage() {
+  const { data: session } = useSession();
+  const isSuperAdmin =
+    (session?.user as { role?: string } | undefined)?.role === "super_admin";
+
   const [members, setMembers] = useState<Member[]>([]);
   const [loading, setLoading] = useState(true);
   const [q, setQ] = useState("");
@@ -45,6 +73,9 @@ export default function MembersPage() {
   const [adjustAmount, setAdjustAmount] = useState("");
   const [adjustNote, setAdjustNote] = useState("");
   const [adjusting, setAdjusting] = useState(false);
+  const [editTarget, setEditTarget] = useState<Member | null>(null);
+  const [editForm, setEditForm] = useState<MemberProfileFormValues | null>(null);
+  const [savingProfile, setSavingProfile] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   const load = useCallback(async (search?: string) => {
@@ -64,6 +95,32 @@ export default function MembersPage() {
   function onSearch(e: React.FormEvent) {
     e.preventDefault();
     load(q);
+  }
+
+  async function submitProfileEdit() {
+    if (!editTarget || !editForm) return;
+    if (!editForm.gender) return;
+    setSavingProfile(true);
+    try {
+      const res = await fetch(`/api/admin/members/${editTarget.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(editForm),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setToast("บันทึกข้อมูลสมาชิกแล้ว");
+        setEditTarget(null);
+        setEditForm(null);
+        load(q);
+        setTimeout(() => setToast(null), 3000);
+      } else {
+        setToast(data.error ?? "บันทึกไม่สำเร็จ");
+        setTimeout(() => setToast(null), 4000);
+      }
+    } finally {
+      setSavingProfile(false);
+    }
   }
 
   async function submitAdjust() {
@@ -206,7 +263,20 @@ export default function MembersPage() {
                   <TableCell className="text-right font-medium text-sm">
                     {m.creditBalance.toLocaleString()}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-right space-x-2">
+                    {isSuperAdmin && m.role === "customer" ? (
+                      <Button
+                        size="sm"
+                        variant="secondary"
+                        className="text-xs"
+                        onClick={() => {
+                          setEditTarget(m);
+                          setEditForm(memberToForm(m));
+                        }}
+                      >
+                        แก้ข้อมูล
+                      </Button>
+                    ) : null}
                     <Button
                       size="sm"
                       variant="outline"
@@ -222,6 +292,34 @@ export default function MembersPage() {
           </TableBody>
         </Table>
       </div>
+
+      <Dialog
+        open={!!editTarget}
+        onOpenChange={(o) => {
+          if (!o) {
+            setEditTarget(null);
+            setEditForm(null);
+          }
+        }}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>แก้ข้อมูลสมาชิก — {editTarget?.name}</DialogTitle>
+          </DialogHeader>
+          {editForm ? (
+            <MemberProfileForm
+              values={editForm}
+              onChange={setEditForm}
+              onSubmit={submitProfileEdit}
+              submitLabel="บันทึก"
+              loading={savingProfile}
+            />
+          ) : null}
+          <p className="text-xs text-muted-foreground">
+            สถานะยืนยัน (OTP/อีเมล/LINE) เปลี่ยนได้เฉพาะเมื่อสมาชิกทำ flow เอง
+          </p>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={!!adjustTarget} onOpenChange={(o) => !o && setAdjustTarget(null)}>
         <DialogContent>

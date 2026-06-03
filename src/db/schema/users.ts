@@ -6,9 +6,10 @@ import {
   boolean,
   timestamp,
   integer,
+  date,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
-import { userRoleEnum, verificationTypeEnum } from "./enums";
+import { userRoleEnum, verificationTypeEnum, genderEnum } from "./enums";
 import { tiers } from "./tiers";
 import { creditTransactions } from "./credits";
 import { bookings } from "./bookings";
@@ -21,6 +22,10 @@ export const users = pgTable("users", {
   email: varchar("email", { length: 255 }).unique(),
   phone: varchar("phone", { length: 20 }).unique(),
   name: varchar("name", { length: 255 }).notNull(),
+  firstName: varchar("first_name", { length: 100 }),
+  lastName: varchar("last_name", { length: 100 }),
+  dateOfBirth: date("date_of_birth"),
+  gender: genderEnum("gender"),
   avatarUrl: text("avatar_url"),
   role: userRoleEnum("role").notNull().default("customer"),
   tierId: uuid("tier_id").references(() => tiers.id),

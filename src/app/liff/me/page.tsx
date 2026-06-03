@@ -31,7 +31,7 @@ function formatMemberSince(iso: string) {
 export default function LiffMePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { isReady: liffReady, profile: liffProfile, error: liffError } = useLiff();
+  const { isReady: liffReady, isInClient, profile: liffProfile, error: liffError } = useLiff();
   const [profile, setProfile] = useState<MeProfile | null>(null);
 
   useEffect(() => {
@@ -49,7 +49,7 @@ export default function LiffMePage() {
       });
   }, [status]);
 
-  if (status === "loading" || !liffReady) {
+  if (status === "loading" || (isInClient && !liffReady)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

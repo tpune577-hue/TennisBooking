@@ -172,6 +172,13 @@ OMISE_SECRET_KEY=...                      # Server-side Omise key
 NEXT_PUBLIC_OMISE_PUBLIC_KEY=...          # Client-side Omise key
 CRON_SECRET=...                           # Bearer token for cron endpoint auth
 SETUP_SECRET=...                          # One-time setup endpoint
+ALLOW_MEMBER_SELF_SIGNUP=false            # true = OTP/email/LINE may create new members
+TWILIO_ACCOUNT_SID=...                    # Optional: SMS OTP (dev logs OTP to console)
+TWILIO_AUTH_TOKEN=...
+TWILIO_PHONE_NUMBER=...
+RESEND_API_KEY=...                        # Optional: email magic links
+EMAIL_FROM=Greenwich <hello@greenwichtennis.co.th>
+NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 ACCESS_DEVICE_KEY=...                     # Optional: turnstile / hardware scan (Bearer on POST /api/access/scan)
 ```
 

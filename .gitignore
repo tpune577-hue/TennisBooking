@@ -27,6 +27,7 @@
 .impeccable/
 
 # misc
+.handoff/
 .DS_Store
 *.pem
 

@@ -9,6 +9,8 @@ import { useCreditBalance } from "@/hooks/use-credit-balance";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { LiffConnectionError } from "@/components/liff/liff-connection-error";
+import { MemberOnboardingChecklist } from "@/components/liff/member-onboarding-checklist";
+import type { MemberOnboardingStatus } from "@/lib/auth/member-readiness";
 import { CalendarDays, ChevronRight, Loader2, Wallet } from "lucide-react";
 
 interface UpcomingBooking {
@@ -37,10 +39,11 @@ function formatTime(s: string) {
 export default function LiffHomePage() {
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { isReady: liffReady, error: liffError } = useLiff();
+  const { isReady: liffReady, isInClient, error: liffError } = useLiff();
   const { creditBalance } = useCreditBalance();
   const [nextBooking, setNextBooking] = useState<UpcomingBooking | null>(null);
   const [profileTier, setProfileTier] = useState<string | null>(null);
+  const [onboarding, setOnboarding] = useState<MemberOnboardingStatus | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -56,8 +59,12 @@ export default function LiffHomePage() {
         fetch("/api/me", { cache: "no-store" }),
       ]);
       if (meRes.ok) {
-        const me = (await meRes.json()) as { tier?: { name: string } | null };
+        const me = (await meRes.json()) as {
+          tier?: { name: string } | null;
+          onboarding?: MemberOnboardingStatus;
+        };
         setProfileTier(me.tier?.name ?? null);
+        if (me.onboarding) setOnboarding(me.onboarding);
       }
       if (bookingsRes.ok) {
         const bookings = (await bookingsRes.json()) as UpcomingBooking[];
@@ -72,7 +79,7 @@ export default function LiffHomePage() {
     })();
   }, [status]);
 
-  if (status === "loading" || !liffReady) {
+  if (status === "loading" || (isInClient && !liffReady)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -81,7 +88,7 @@ export default function LiffHomePage() {
     );
   }
 
-  if (liffError) {
+  if (isInClient && liffError) {
     return <LiffConnectionError detail={liffError} />;
   }
 
@@ -104,6 +111,8 @@ export default function LiffHomePage() {
           )}
         </p>
       </div>
+
+      {onboarding ? <MemberOnboardingChecklist onboarding={onboarding} /> : null}
 
       <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
         <div className="flex items-center justify-between">
@@ -163,8 +172,11 @@ export default function LiffHomePage() {
         </div>
       )}
 
-      <Link href="/liff/book" className="block">
-        <Button className="w-full h-12 rounded-sm text-sm font-semibold tracking-wide uppercase">
+      <Link href="/liff/book" className="block" aria-disabled={onboarding ? !onboarding.canBook : undefined}>
+        <Button
+          className="w-full h-12 rounded-sm text-sm font-semibold tracking-wide uppercase"
+          disabled={onboarding ? !onboarding.canBook : false}
+        >
           จองคอร์ต
         </Button>
       </Link>

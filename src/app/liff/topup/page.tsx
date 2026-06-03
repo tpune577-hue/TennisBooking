@@ -64,7 +64,7 @@ function fmtExpiry(v: string) {
 export default function LiffTopupPage() {
   const router = useRouter();
   const { status } = useSession();
-  const { isReady: liffReady } = useLiff();
+  const { isReady: liffReady, isInClient } = useLiff();
   const { creditBalance, refresh: refreshCreditBalance } = useCreditBalance();
   const { setHideNav } = useLiffNavOverride();
 
@@ -249,7 +249,7 @@ export default function LiffTopupPage() {
   }
 
   // ─── Render guards ───────────────────────────────────────────────────────────
-  if (status === "loading" || !liffReady) {
+  if (status === "loading" || (isInClient && !liffReady)) {
     return (
       <div className="flex flex-col items-center justify-center flex-1 gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

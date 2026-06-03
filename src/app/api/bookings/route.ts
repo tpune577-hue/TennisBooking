@@ -5,6 +5,7 @@ import { and, eq, ne, lt, gt, sql, desc } from "drizzle-orm";
 import { z } from "zod";
 import { notifyBookingConfirmed } from "@/lib/notifications/line";
 import { createPassesForConfirmedBooking } from "@/lib/access/passes";
+import { assertMemberCanBook, loadReadinessColumns } from "@/lib/auth/member-readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -70,7 +71,25 @@ export async function POST(req: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
+  const userId = (session.user as { id: string }).id;
+
   try {
+    const db = getDb();
+    const member = await db.query.users.findFirst({
+      where: eq(schema.users.id, userId),
+      columns: loadReadinessColumns(),
+    });
+    if (!member) {
+      return Response.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    const bookCheck = assertMemberCanBook(member);
+    if (!bookCheck.ok) {
+      return Response.json(
+        { error: bookCheck.message, code: bookCheck.code },
+        { status: 403 },
+      );
+    }
+
     const body = await req.json();
     const parsed = createBookingSchema.safeParse(body);
     if (!parsed.success) {
@@ -80,7 +99,6 @@ export async function POST(req: Request) {
     const { courtId, coachId, type, startTime: startStr, endTime: endStr } = parsed.data;
     const startTime = new Date(startStr);
     const endTime = new Date(endStr);
-    const userId = (session.user as { id: string }).id;
 
     if (startTime >= endTime) {
       return Response.json({ error: "endTime must be after startTime" }, { status: 400 });
@@ -92,8 +110,6 @@ export async function POST(req: Request) {
     if (durationHours < 1 || durationHours > 6) {
       return Response.json({ error: "Booking duration must be 1–6 hours" }, { status: 400 });
     }
-
-    const db = getDb();
 
     // Check for conflicts
     const conflicts = await db

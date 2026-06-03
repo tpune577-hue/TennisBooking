@@ -53,6 +53,8 @@ export const verificationTypeEnum = pgEnum("verification_type", [
   "email",
 ]);
 
+export const genderEnum = pgEnum("gender", ["male", "female", "unspecified"]);
+
 export const packageStatusEnum = pgEnum("package_status", [
   "active",
   "inactive",

@@ -24,8 +24,12 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Greenwich Tennis Academy",
-  description: "ระบบจองสนามและจัดการสมาชิก Greenwich Tennis Academy",
+  title: {
+    default: "Greenwich Tennis Academy",
+    template: "%s · Greenwich Tennis Academy",
+  },
+  description:
+    "Greenwich Tennis Academy: private indoor tennis, court booking for members, and club hospitality in Bangkok.",
 };
 
 export default function RootLayout({

@@ -5,6 +5,7 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from "
 interface LiffContextValue {
   isReady: boolean;
   isLoggedIn: boolean;
+  isInClient: boolean;
   profile: { userId: string; displayName: string; pictureUrl?: string } | null;
   liff: typeof import("@line/liff").default | null;
   error: string | null;
@@ -13,6 +14,7 @@ interface LiffContextValue {
 const LiffContext = createContext<LiffContextValue>({
   isReady: false,
   isLoggedIn: false,
+  isInClient: false,
   profile: null,
   liff: null,
   error: null,
@@ -22,6 +24,7 @@ export function LiffProvider({ liffId, children }: { liffId: string; children: R
   const [state, setState] = useState<LiffContextValue>({
     isReady: false,
     isLoggedIn: false,
+    isInClient: false,
     profile: null,
     liff: null,
     error: null,
@@ -31,11 +34,39 @@ export function LiffProvider({ liffId, children }: { liffId: string; children: R
     let mounted = true;
 
     async function init() {
+      if (!liffId) {
+        if (mounted) {
+          setState({
+            isReady: true,
+            isLoggedIn: false,
+            isInClient: false,
+            profile: null,
+            liff: null,
+            error: null,
+          });
+        }
+        return;
+      }
+
       try {
         const liff = (await import("@line/liff")).default;
         await liff.init({ liffId });
 
         if (!mounted) return;
+
+        const inClient = liff.isInClient();
+
+        if (!inClient) {
+          setState({
+            isReady: true,
+            isLoggedIn: false,
+            isInClient: false,
+            profile: null,
+            liff,
+            error: null,
+          });
+          return;
+        }
 
         if (!liff.isLoggedIn()) {
           liff.login();
@@ -46,6 +77,7 @@ export function LiffProvider({ liffId, children }: { liffId: string; children: R
         setState({
           isReady: true,
           isLoggedIn: true,
+          isInClient: true,
           profile: {
             userId: profile.userId,
             displayName: profile.displayName,
@@ -69,7 +101,9 @@ export function LiffProvider({ liffId, children }: { liffId: string; children: R
     }
 
     init();
-    return () => { mounted = false; };
+    return () => {
+      mounted = false;
+    };
   }, [liffId]);
 
   return <LiffContext.Provider value={state}>{children}</LiffContext.Provider>;

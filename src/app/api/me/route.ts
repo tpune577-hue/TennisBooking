@@ -1,6 +1,11 @@
 import { auth } from "@/lib/auth";
 import { getDb, schema } from "@/db";
 import { eq } from "drizzle-orm";
+import {
+  getMemberOnboardingStatus,
+  isProfileComplete,
+  loadReadinessColumns,
+} from "@/lib/auth/member-readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +23,7 @@ export async function GET() {
       name: true,
       avatarUrl: true,
       createdAt: true,
+      ...loadReadinessColumns(),
     },
     with: {
       tier: { columns: { name: true, discountPercent: true } },
@@ -28,13 +34,23 @@ export async function GET() {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
+  const onboarding = getMemberOnboardingStatus(user);
+
   return Response.json({
     creditBalance: user.creditBalance,
     name: user.name,
+    firstName: user.firstName,
+    lastName: user.lastName,
+    email: user.email,
+    phone: user.phone,
+    dateOfBirth: user.dateOfBirth,
+    gender: user.gender,
     avatarUrl: user.avatarUrl,
     createdAt: user.createdAt.toISOString(),
     tier: user.tier
       ? { name: user.tier.name, discountPercent: user.tier.discountPercent }
       : null,
+    profileComplete: isProfileComplete(user),
+    onboarding,
   });
 }

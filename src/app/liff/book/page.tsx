@@ -65,7 +65,7 @@ function BookPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session, status } = useSession();
-  const { isReady: liffReady } = useLiff();
+  const { isReady: liffReady, isInClient } = useLiff();
   const { creditBalance, loading: balanceLoading } = useCreditBalance();
 
   const initialType =
@@ -95,6 +95,8 @@ function BookPageContent() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [loadingCoaches, setLoadingCoaches] = useState(false);
   const { visible: showRangeTip, dismiss: dismissRangeTip } = useBookingRangeTip();
+  const [canBook, setCanBook] = useState(true);
+  const [bookingBlockMessage, setBookingBlockMessage] = useState<string | null>(null);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -138,6 +140,23 @@ function BookPageContent() {
   useEffect(() => {
     loadCourts();
   }, []);
+
+  useEffect(() => {
+    if (status !== "authenticated") return;
+    void fetch("/api/me", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((me: { onboarding?: { canBook: boolean }; error?: string }) => {
+        if (me.onboarding) {
+          setCanBook(me.onboarding.canBook);
+          if (!me.onboarding.canBook) {
+            setBookingBlockMessage(
+              "กรุณากรอกข้อมูลและยืนยันตัวตนให้ครบก่อนจอง — ดูคู่มือที่หน้าหลัก",
+            );
+          }
+        }
+      })
+      .catch(() => undefined);
+  }, [status]);
 
   useEffect(() => {
     if (!selectedCourt) return;
@@ -263,7 +282,7 @@ function BookPageContent() {
   }
 
   function handleConfirm() {
-    if (!selectionComplete || !selectedCourt || !hasEnoughCredits) return;
+    if (!canBook || !selectionComplete || !selectedCourt || !hasEnoughCredits) return;
     const dateStr = format(selectedDate, "yyyy-MM-dd");
     const p = new URLSearchParams({
       type: bookingType,
@@ -324,7 +343,7 @@ function BookPageContent() {
     startHour === null &&
     pendingStart === null;
 
-  if ((status === "loading" && !session) || !liffReady) {
+  if ((status === "loading" && !session) || (isInClient && !liffReady)) {
     return (
       <div className="flex flex-col items-center justify-center flex-1 gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -344,6 +363,12 @@ function BookPageContent() {
 
       <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
         <div className="mx-auto w-full max-w-md px-4 pt-5 pb-[calc(11.5rem+env(safe-area-inset-bottom))] flex flex-col gap-6">
+        {bookingBlockMessage ? (
+          <p className="rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-sm text-amber-900 dark:text-amber-100">
+            {bookingBlockMessage}
+          </p>
+        ) : null}
+
         <BookingTypeToggle
           value={bookingType}
           onChange={setBookingTypeAndUrl}
@@ -679,7 +704,7 @@ function BookPageContent() {
       <BookingStickyFooter
         summaryLines={summaryLines}
         totalCost={totalCost}
-        canProceed={selectionComplete}
+        canProceed={selectionComplete && canBook}
         hasEnoughCredits={hasEnoughCredits}
         creditShortfall={creditShortfall}
         nextStep={nextStep}

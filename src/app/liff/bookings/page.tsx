@@ -45,7 +45,7 @@ function hoursUntil(s: string) {
 export default function LiffBookingsPage() {
   const router = useRouter();
   const { status } = useSession();
-  const { isReady: liffReady, error: liffError } = useLiff();
+  const { isReady: liffReady, isInClient, error: liffError } = useLiff();
   const [tab, setTab] = useState<"upcoming" | "past">("upcoming");
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
@@ -73,7 +73,7 @@ export default function LiffBookingsPage() {
     if (status === "authenticated") void load();
   }, [status, load]);
 
-  if (status === "loading" || !liffReady) {
+  if (status === "loading" || (isInClient && !liffReady)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

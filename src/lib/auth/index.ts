@@ -3,9 +3,13 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter";
 import { getDb, schema } from "@/db";
 import { authConfig } from "./config";
 import { eq } from "drizzle-orm";
+import {
+  assertLineSignInAllowed,
+  cleanupRejectedOAuthUser,
+  linkLineToUser,
+} from "./line-sign-in";
+import { loadUserForSession } from "./users";
 
-// Lazily create the NextAuth instance so getDb() (and thus neon()) is only
-// called when the first real HTTP request arrives, not at module evaluation time.
 let _instance: NextAuthResult | null = null;
 
 function getInstance(): NextAuthResult {
@@ -26,15 +30,15 @@ function getInstance(): NextAuthResult {
           token.role = (user as { role?: string }).role ?? "customer";
         }
 
-        // Refresh user data from DB on sign-in OR when session.update() is called
-        if ((account?.provider === "line" && user?.id) || trigger === "update") {
+        const shouldRefresh =
+          account?.provider === "line" ||
+          account?.provider === "credentials" ||
+          trigger === "update";
+
+        if (shouldRefresh) {
           const id = (user?.id ?? token.id) as string | undefined;
           if (id) {
-            const db = getDb();
-            const dbUser = await db.query.users.findFirst({
-              where: eq(schema.users.id, id),
-              columns: { role: true, tierId: true, creditBalance: true, lineUserId: true },
-            });
+            const dbUser = await loadUserForSession(id);
             if (dbUser) {
               token.role = dbUser.role;
               token.tierId = dbUser.tierId;
@@ -58,30 +62,25 @@ function getInstance(): NextAuthResult {
       },
       async signIn({ user, account, profile }) {
         if (account?.provider !== "line") return true;
+        if (!user.id || !account.providerAccountId) return false;
 
-        const db = getDb();
-        const lineUserId = account.providerAccountId;
-
-        const existing = await db.query.users.findFirst({
-          where: eq(schema.users.lineUserId, lineUserId),
+        const check = await assertLineSignInAllowed({
+          userId: user.id,
+          lineProviderAccountId: account.providerAccountId,
+          profileEmail: (profile as { email?: string })?.email ?? user.email,
         });
 
-        if (!existing) {
-          const defaultTier = await db.query.tiers.findFirst({
-            where: eq(schema.tiers.name, "Regular"),
-          });
-
-          await db
-            .update(schema.users)
-            .set({
-              lineUserId,
-              name: profile?.name ?? user.name ?? "User",
-              avatarUrl: (profile as { pictureUrl?: string })?.pictureUrl ?? user.image ?? null,
-              tierId: defaultTier?.id ?? null,
-              updatedAt: new Date(),
-            })
-            .where(eq(schema.users.id, user.id!));
+        if (!check.ok) {
+          await cleanupRejectedOAuthUser(user.id);
+          return `/sign-in?error=${encodeURIComponent(check.reason)}`;
         }
+
+        await linkLineToUser({
+          userId: user.id,
+          lineUserId: account.providerAccountId,
+          name: profile?.name ?? user.name ?? "User",
+          avatarUrl: (profile as { pictureUrl?: string })?.pictureUrl ?? user.image ?? null,
+        });
 
         return true;
       },
@@ -91,7 +90,6 @@ function getInstance(): NextAuthResult {
   return _instance;
 }
 
-// Lazy wrappers — no DB call happens until first request
 export const handlers = {
   GET: (...args: Parameters<NextAuthResult["handlers"]["GET"]>) =>
     getInstance().handlers.GET(...args),

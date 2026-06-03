@@ -23,7 +23,7 @@ const TERMS_URL = "/terms";
 export default function LiffSettingsPage() {
   const router = useRouter();
   const { status } = useSession();
-  const { isReady: liffReady, error: liffError } = useLiff();
+  const { isReady: liffReady, isInClient, error: liffError } = useLiff();
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -31,7 +31,7 @@ export default function LiffSettingsPage() {
     }
   }, [status, router]);
 
-  if (status === "loading" || !liffReady) {
+  if (status === "loading" || (isInClient && !liffReady)) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />

@@ -109,12 +109,12 @@ export default async function DashboardPage() {
             <CreditCard className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground mt-1 mb-3">เปิด LIFF App เพื่อจองสนาม</p>
-            <a href={`https://liff.line.me/${process.env.NEXT_PUBLIC_LIFF_ID}`} target="_blank" rel="noopener noreferrer">
+            <p className="text-xs text-muted-foreground mt-1 mb-3">จองคอร์ตด้วยเครดิตสมาชิก</p>
+            <Link href="/liff/book">
               <Button size="sm" className="w-full text-xs">
                 จองสนาม
               </Button>
-            </a>
+            </Link>
           </CardContent>
         </Card>
       </div>
