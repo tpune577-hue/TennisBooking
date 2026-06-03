@@ -38,6 +38,9 @@ CREATE TABLE IF NOT EXISTS booking_access_passes (
   CONSTRAINT booking_access_passes_booking_user_unique UNIQUE (booking_id, user_id)
 );
 
+-- If booking_access_passes already existed without newer columns, apply patch:
+-- scripts/migrate-booking-access-passes-patch.sql
+
 CREATE TABLE IF NOT EXISTS access_scan_events (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   pass_id uuid REFERENCES booking_access_passes(id) ON DELETE SET NULL,

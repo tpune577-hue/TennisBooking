@@ -240,7 +240,21 @@ export async function POST(req: Request) {
       description: `จองสนาม ${bookingRef}`,
     });
 
-    const accessPassesOk = await createPassesForConfirmedBooking(booking.id);
+    let accessPassesOk = false;
+    try {
+      accessPassesOk = await createPassesForConfirmedBooking(booking.id);
+    } catch (passErr) {
+      console.error(
+        JSON.stringify({
+          level: "warn",
+          msg: "access_pass_create_failed",
+          route: "POST /api/bookings",
+          bookingId: booking.id,
+          error: String(passErr),
+          hint: "Run scripts/migrate-booking-access-passes-patch.sql on this DATABASE_URL",
+        })
+      );
+    }
 
     const result = {
       booking,

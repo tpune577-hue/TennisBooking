@@ -189,9 +189,12 @@ ACCESS_DEVICE_KEY=...                     # Optional: turnstile / hardware scan 
 ```bash
 npm run db:push      # push schema (incl. club_access_settings, booking_access_passes, access_scan_events)
 # If push stops at booking_invites prompt: choose "No, truncate" → No (keep data). Or run scripts/migrate-club-access.sql in Neon SQL Editor.
+npm run db:migrate-access-patch   # add presence/revoked_at/updated_at if booking_access_passes predates club-access migration
 npm run db:studio    # open Drizzle Studio
 npm run db:seed      # seed courts, tiers, admin user
 ```
+
+**Booking 500 on `booking_access_passes`:** Preview/production Neon may use a different `DATABASE_URL` than `.env.local`. Run `migrate-booking-access-passes-patch.sql` in that branch’s Neon (or `DATABASE_URL=<preview> npm run db:migrate-access-patch`), then redeploy if the app build predates access-pass try/catch (`ee65bbb`).
 
 ---
 

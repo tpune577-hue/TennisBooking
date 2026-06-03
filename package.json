@@ -11,7 +11,8 @@
     "db:migrate": "dotenv -e .env.local -- drizzle-kit migrate",
     "db:push": "dotenv -e .env.local -- drizzle-kit push",
     "db:studio": "dotenv -e .env.local -- drizzle-kit studio",
-    "db:seed": "dotenv -e .env.local -- tsx src/db/seed.ts"
+    "db:seed": "dotenv -e .env.local -- tsx src/db/seed.ts",
+    "db:migrate-access-patch": "dotenv -e .env.local -- node scripts/run-sql-file.mjs scripts/migrate-booking-access-passes-patch.sql"
   },
   "dependencies": {
     "@auth/drizzle-adapter": "^1.11.2",
