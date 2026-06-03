@@ -1,7 +1,18 @@
+function logEmailCodeOnly(email: string, code: string) {
+  console.info(
+    `[auth] Email verification code for ${email}: ${code} (not sent — AUTH_LOG_VERIFICATION_CODES or dev mode)`,
+  );
+}
+
 export async function sendEmailVerificationCode(
   email: string,
   code: string,
 ): Promise<void> {
+  if (process.env.AUTH_LOG_VERIFICATION_CODES === "true") {
+    logEmailCodeOnly(email, code);
+    return;
+  }
+
   if (process.env.RESEND_API_KEY && process.env.EMAIL_FROM) {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -26,5 +37,5 @@ export async function sendEmailVerificationCode(
     throw new Error("Email provider is not configured (RESEND_API_KEY, EMAIL_FROM)");
   }
 
-  console.info(`[dev] Email verification code for ${email}: ${code}`);
+  logEmailCodeOnly(email, code);
 }

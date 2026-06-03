@@ -174,14 +174,21 @@ NEXT_PUBLIC_OMISE_PUBLIC_KEY=...          # Client-side Omise key
 CRON_SECRET=...                           # Bearer token for cron endpoint auth
 SETUP_SECRET=...                          # One-time setup endpoint
 ALLOW_MEMBER_SELF_SIGNUP=false            # true = OTP/email/LINE may create new members
-TWILIO_ACCOUNT_SID=...                    # Optional: SMS OTP (dev logs OTP to console)
+AUTH_LOG_VERIFICATION_CODES=true            # Test OTP/email without Twilio/Resend — codes only in server logs
+TWILIO_ACCOUNT_SID=...                    # Optional: real SMS (omit or use AUTH_LOG_* for free test)
 TWILIO_AUTH_TOKEN=...
 TWILIO_PHONE_NUMBER=...
-RESEND_API_KEY=...                        # Optional: email magic links
+RESEND_API_KEY=...                        # Optional: real email (omit or use AUTH_LOG_* for free test)
 EMAIL_FROM=Greenwich <hello@greenwichtennis.co.th>
 NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 ACCESS_DEVICE_KEY=...                     # Optional: turnstile / hardware scan (Bearer on POST /api/access/scan)
 ```
+
+**ทดสอบ OTP / รหัสอีเมลฟรี (ไม่ใช้ Twilio/Resend):**
+
+- **Local:** ใน `.env.local` ตั้ง `AUTH_LOG_VERIFICATION_CODES=true` *หรือ* ลบ/คอมเมนต์ `TWILIO_*` และ `RESEND_API_KEY` + `EMAIL_FROM` แล้ว `npm run dev` — ดูรหัสในเทอร์มินัลที่รัน dev (บรรทัด `[auth] OTP for ...` / `Email verification code for ...`)
+- **Vercel Preview:** ตั้ง `AUTH_LOG_VERIFICATION_CODES=true` ใน Environment Variables (Preview) → กดส่งรหัสใน LIFF → เปิด Deployment → **Logs** / Runtime Logs หา `[auth]`
+- ถ้ามี `TWILIO_*` หรือ `RESEND_*` ครบ ระบบจะพยายามส่งจริง (เสียเงิน/ล้มเหลวถ้า trial ไม่ผ่าน) — ใช้ `AUTH_LOG_VERIFICATION_CODES=true` เพื่อบังคับ log อย่างเดียว
 
 **LINE login `InvalidCheck: state value could not be parsed`:** OAuth `state` cookie missing on callback — usually host mismatch. On Vercel **preview**, `ensureAuthUrl()` forces `AUTH_URL` from `VERCEL_URL`; still register `https://<preview-host>/api/auth/callback/line` in LINE Login. On **production**, set `AUTH_URL` to your custom domain. Set `AUTH_DEBUG=1` temporarily to get `[auth][debug]` in Vercel logs. Clear site cookies between attempts.
 
