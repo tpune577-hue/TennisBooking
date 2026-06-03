@@ -165,7 +165,9 @@ export default function LiffHomePage() {
       )}
 
       <Link href="/liff/book" className="block">
-        <Button className="w-full h-12 text-base font-semibold">จองสนาม</Button>
+        <Button className="w-full h-12 rounded-sm text-sm font-semibold tracking-wide uppercase">
+          จองคอร์ต
+        </Button>
       </Link>
     </div>
   );

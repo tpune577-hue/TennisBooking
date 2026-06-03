@@ -50,10 +50,10 @@ function ConfirmContent() {
 
   const courtTypeLabel =
     courtType === "indoor"
-      ? "Indoor"
+      ? "ในร่ม"
       : courtType === "clay"
-        ? "Clay"
-        : "Outdoor";
+        ? "คอร์ตดิน"
+        : "กลางแจ้ง";
 
   const timeRange = `${String(startHour).padStart(2, "0")}:00 – ${String(endHour).padStart(2, "0")}:00`;
 

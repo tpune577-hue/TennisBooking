@@ -39,7 +39,7 @@ export function LiffBookingHeader({
     ) : null;
 
   return (
-    <header className="shrink-0 border-b border-border bg-card px-4 py-3.5 flex items-center gap-3">
+    <header className="shrink-0 border-b border-border bg-brand-header backdrop-blur-md px-4 py-3.5 flex items-center gap-3">
       {backControl}
       <div className="flex-1 min-w-0">
         <h1 className="font-heading text-base font-medium text-foreground leading-tight">
@@ -86,6 +86,24 @@ export function BookingIntro({
   );
 }
 
+export function BookingForm({ children }: { children: React.ReactNode }) {
+  return (
+    <div className="rounded-sm border border-border bg-card divide-y divide-border shadow-[0_1px_2px_oklch(0.22_0.02_75_/_0.05)]">
+      {children}
+    </div>
+  );
+}
+
+export function BookingFormSection({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return <div className={cn("px-4 py-5", className)}>{children}</div>;
+}
+
 export function BookingField({
   step,
   label,
@@ -98,12 +116,12 @@ export function BookingField({
   className?: string;
 }) {
   return (
-    <section className={cn("space-y-3", className)}>
-      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[var(--brand-oak-deep)]">
+    <section className={cn("flex flex-col gap-3", className)}>
+      <p className="text-sm font-semibold text-[var(--brand-oak-deep)] leading-snug">
         {step != null ? `${step} · ` : ""}
         {label}
       </p>
-      {children}
+      <div className="flex flex-col gap-2">{children}</div>
     </section>
   );
 }
@@ -134,7 +152,8 @@ export function BookingChip({
         "border rounded-sm text-left",
         variant === "date" &&
           "min-w-[62px] flex flex-col items-center gap-0.5 py-2.5 px-2 text-center",
-        variant === "slot" && "py-2.5 text-center text-sm tabular-nums",
+        variant === "slot" &&
+          "min-h-11 py-2.5 text-center text-sm tabular-nums",
         variant === "default" && "py-2.5 px-4 text-sm",
         disabled &&
           "opacity-35 cursor-not-allowed line-through border-border/60 bg-muted/20 text-muted-foreground",
@@ -266,6 +285,151 @@ export function BookingOptionCard({
         ))}
       </div>
     </button>
+  );
+}
+
+export type BookingType = "court_only" | "court_with_coach";
+
+export function BookingTypeToggle({
+  value,
+  onChange,
+}: {
+  value: BookingType;
+  onChange: (type: BookingType) => void;
+}) {
+  const options: { id: BookingType; label: string }[] = [
+    { id: "court_only", label: "จองสนามอย่างเดียว" },
+    { id: "court_with_coach", label: "จองพร้อมโค้ช" },
+  ];
+
+  return (
+    <div
+      className="flex rounded-sm border border-border p-1 bg-[var(--brand-paper)]"
+      role="group"
+      aria-label="รูปแบบการจอง"
+    >
+      {options.map((opt) => {
+        const active = value === opt.id;
+        return (
+          <button
+            key={opt.id}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(opt.id)}
+            className={cn(
+              "flex-1 min-h-11 px-3 py-2 text-sm font-medium rounded-sm transition-colors duration-200",
+              active
+                ? "bg-card text-foreground shadow-sm border border-border"
+                : "text-muted-foreground hover:text-foreground"
+            )}
+          >
+            {opt.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+export function BookingStickyFooter({
+  summaryLines,
+  totalCost,
+  canProceed,
+  hasEnoughCredits,
+  creditShortfall,
+  onConfirm,
+  onTopUp,
+}: {
+  summaryLines: { label: string; value: string }[];
+  totalCost: number;
+  canProceed: boolean;
+  hasEnoughCredits: boolean;
+  creditShortfall: number;
+  onConfirm: () => void;
+  onTopUp: () => void;
+}) {
+  const showTotal = canProceed && totalCost > 0;
+
+  return (
+    <div className="sticky bottom-0 z-20 border-t border-border bg-brand-header backdrop-blur-md px-4 py-3 pb-[max(12px,env(safe-area-inset-bottom))] space-y-3">
+      {summaryLines.length > 0 ? (
+        <div
+          className="rounded-sm bg-[var(--brand-ink)] text-white px-4 py-3 text-sm space-y-1.5"
+          aria-live="polite"
+        >
+          {summaryLines.map((line) => (
+            <div key={line.label} className="flex justify-between gap-3">
+              <span className="text-[oklch(0.72_0.02_85)]">{line.label}</span>
+              <span className="font-medium text-right tabular-nums">{line.value}</span>
+            </div>
+          ))}
+          {showTotal ? (
+            <div className="flex justify-between gap-3 pt-1.5 border-t border-white/10">
+              <span className="text-[oklch(0.72_0.02_85)]">รวม</span>
+              <span className="font-heading text-lg tabular-nums">
+                {totalCost.toLocaleString()} cr
+              </span>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {canProceed && !hasEnoughCredits ? (
+        <div className="rounded-sm border border-destructive/30 bg-destructive/8 px-3 py-2.5 flex items-center justify-between gap-3">
+          <p className="text-sm text-destructive font-medium">
+            เครดิตไม่พอ · ขาด {creditShortfall.toLocaleString()} cr
+          </p>
+          <button
+            type="button"
+            onClick={onTopUp}
+            className="text-sm font-semibold text-primary shrink-0 underline-offset-2 hover:underline"
+          >
+            เติมเครดิต
+          </button>
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={onConfirm}
+        disabled={!canProceed || !hasEnoughCredits}
+        className={cn(
+          "w-full min-h-12 rounded-sm text-sm font-semibold tracking-wide uppercase transition-colors",
+          canProceed && hasEnoughCredits
+            ? "btn-brand"
+            : "bg-muted text-muted-foreground cursor-not-allowed"
+        )}
+      >
+        {canProceed && hasEnoughCredits
+          ? `ยืนยันการจอง · ${totalCost.toLocaleString()} เครดิต`
+          : canProceed
+            ? "เติมเครดิตก่อนจอง"
+            : "เลือกให้ครบก่อน"}
+      </button>
+    </div>
+  );
+}
+
+export function BookingDateSkeleton() {
+  return (
+    <div className="flex gap-2">
+      {Array.from({ length: 7 }).map((_, i) => (
+        <div
+          key={i}
+          className="min-w-[62px] h-[72px] rounded-sm bg-muted animate-pulse"
+        />
+      ))}
+    </div>
+  );
+}
+
+export function BookingSlotSkeleton() {
+  return (
+    <div className="grid grid-cols-[repeat(auto-fill,minmax(86px,1fr))] gap-2">
+      {Array.from({ length: 12 }).map((_, i) => (
+        <div key={i} className="h-11 rounded-sm bg-muted animate-pulse" />
+      ))}
+    </div>
   );
 }
 

@@ -166,7 +166,7 @@ function SuccessContent() {
         <Button
           variant="outline"
           className="w-full h-12 rounded-sm text-sm font-semibold"
-          onClick={() => router.push("/liff/book")}
+          onClick={() => router.push("/liff/book?type=court_only")}
         >
           จองคอร์ตอีกครั้ง
         </Button>
