@@ -26,6 +26,19 @@ function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
     void signIn("line", { callbackUrl });
   }, [isInClient, isReady, isLoggedIn, status, callbackUrl]);
 
+  // Wait for LIFF to finish initializing before deciding whether we are inside
+  // the LINE client.  Without this guard, isInClient starts as false and
+  // children (which call useLiffRequireSession) render immediately, causing a
+  // redirect to /sign-in before liff.init() has a chance to set isInClient=true.
+  if (!isReady) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <p className="text-sm text-muted-foreground">กำลังเชื่อมต่อ LINE...</p>
+      </div>
+    );
+  }
+
   if (!isInClient) {
     return <>{children}</>;
   }
@@ -34,7 +47,7 @@ function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
     return null;
   }
 
-  if (!isReady || !isLoggedIn) {
+  if (!isLoggedIn) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
