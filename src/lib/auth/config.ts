@@ -1,12 +1,16 @@
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import LINE from "next-auth/providers/line";
+import { ensureAuthUrl } from "./ensure-auth-url";
 import { verifyEmailToken, verifyPhoneOtp } from "./verification";
 import { loadUserForSession } from "./users";
+
+ensureAuthUrl();
 
 export const authConfig: NextAuthConfig = {
   // Required on Vercel preview/production when AUTH_URL may differ from request host
   trustHost: true,
+  debug: process.env.AUTH_DEBUG === "1",
   providers: [
     LINE({
       clientId: process.env.LINE_CHANNEL_ID!,

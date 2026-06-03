@@ -183,7 +183,7 @@ NEXT_PUBLIC_APP_URL=https://your-domain.vercel.app
 ACCESS_DEVICE_KEY=...                     # Optional: turnstile / hardware scan (Bearer on POST /api/access/scan)
 ```
 
-**LINE login `InvalidCheck: state value could not be parsed`:** Usually `AUTH_URL` points at a different host than the deployment (e.g. production URL while testing preview), or LINE callback URL is not registered for that host. Fix: set `AUTH_URL` to the exact preview URL, add `https://<that-host>/api/auth/callback/line` in LINE Login channel, redeploy. Clear site cookies and retry.
+**LINE login `InvalidCheck: state value could not be parsed`:** OAuth `state` cookie missing on callback — usually host mismatch. On Vercel **preview**, `ensureAuthUrl()` forces `AUTH_URL` from `VERCEL_URL`; still register `https://<preview-host>/api/auth/callback/line` in LINE Login. On **production**, set `AUTH_URL` to your custom domain. Set `AUTH_DEBUG=1` temporarily to get `[auth][debug]` in Vercel logs. Clear site cookies between attempts.
 
 ---
 
