@@ -90,7 +90,7 @@ export default function LiffSettingsPage() {
 
       <button
         type="button"
-        onClick={() => signOut({ callbackUrl: "/sign-in" })}
+        onClick={() => signOut({ callbackUrl: "/" })}
         className="w-full flex items-center justify-center gap-2 rounded-2xl border border-destructive/30 bg-destructive/5 text-destructive py-3.5 text-sm font-semibold hover:bg-destructive/10 transition-colors"
       >
         <LogOut className="h-4 w-4" />

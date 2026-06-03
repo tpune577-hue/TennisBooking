@@ -10,8 +10,9 @@ export const metadata: Metadata = {
   description: "Reserve an indoor court at Greenwich Tennis Academy — members sign in to book.",
 };
 
-const BOOK_CALLBACK = "/liff/home";
-const SIGN_IN_HREF = `/sign-in?callbackUrl=${encodeURIComponent(BOOK_CALLBACK)}`;
+const BOOK_CALLBACK = "/liff/book";
+const AUTH_HREF = `/sign-in?callbackUrl=${encodeURIComponent(BOOK_CALLBACK)}`;
+const SIGN_UP_HREF = `/sign-up?callbackUrl=${encodeURIComponent(BOOK_CALLBACK)}`;
 
 export default function BookingPage() {
   return (
@@ -58,10 +59,24 @@ export default function BookingPage() {
                   th="ใช้บัญชีสมาชิกเดียวกันทั้งบนเว็บและใน LINE"
                 />
               </p>
-              <Link className="btn btn-primary" href={SIGN_IN_HREF} style={{ width: "100%", justifyContent: "center" }}>
-                <Bilingual en="Sign in to book" th="เข้าสู่ระบบเพื่อจอง" />
-                <span className="arrow">→</span>
-              </Link>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                <Link
+                  className="btn btn-primary"
+                  href={AUTH_HREF}
+                  style={{ width: "100%", justifyContent: "center" }}
+                >
+                  <Bilingual en="Sign in" th="เข้าสู่ระบบ" />
+                  <span className="arrow">→</span>
+                </Link>
+                <Link
+                  className="btn btn-ghost"
+                  href={SIGN_UP_HREF}
+                  style={{ width: "100%", justifyContent: "center" }}
+                >
+                  <Bilingual en="Sign up" th="สมัครสมาชิก" />
+                  <span className="arrow">→</span>
+                </Link>
+              </div>
               <p style={{ marginTop: "1.25rem", fontSize: "0.9rem", color: "var(--ink-3)" }}>
                 <Bilingual
                   en="LINE · email magic link · phone OTP"

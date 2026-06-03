@@ -15,13 +15,8 @@ function SignInPageInner() {
   const { data: session, status } = useSession();
   const callbackUrl = searchParams.get("callbackUrl") ?? DEFAULT_CALLBACK;
   const error = searchParams.get("error");
-  // Skip the generic hub when arriving from LIFF (callbackUrl is a /liff/ path)
-  // or when NextAuth bounced here with an error (e.g. LINE OAuth rejection).
-  // In both cases the user expects to see the LINE login button immediately.
-  const fromLiff = callbackUrl.startsWith("/liff");
-  const [view, setView] = useState<"hub" | "sign-in">(
-    error || fromLiff ? "sign-in" : "hub"
-  );
+  // OAuth errors need the sign-in form (LINE / OTP) with the message visible.
+  const [view, setView] = useState<"hub" | "sign-in">(error ? "sign-in" : "hub");
 
   useEffect(() => {
     if (session?.user) router.replace(callbackUrl);

@@ -1,18 +1,18 @@
 "use client";
 
-import { Suspense, useEffect, useRef, type ReactNode } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import { signIn, useSession } from "next-auth/react";
+import { Suspense, useEffect, type ReactNode } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { useLiff } from "@/lib/liff/provider";
 import { Loader2 } from "lucide-react";
 
 function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
+  const router = useRouter();
   const { data: session, status } = useSession();
   const hasUser = Boolean(session?.user);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { isInClient, isReady, isLoggedIn, error: liffError } = useLiff();
-  const signInStarted = useRef(false);
 
   const callbackUrl =
     pathname +
@@ -21,16 +21,11 @@ function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!isInClient || !isReady || !isLoggedIn) return;
     if (status !== "unauthenticated") return;
-    if (signInStarted.current) return;
-    signInStarted.current = true;
-    // Full redirect keeps OAuth state/PKCE cookies intact (redirect: false breaks in LINE WebView)
-    void signIn("line", { callbackUrl });
-  }, [isInClient, isReady, isLoggedIn, status, callbackUrl]);
+    router.replace(
+      `/sign-in?callbackUrl=${encodeURIComponent(callbackUrl)}`,
+    );
+  }, [isInClient, isReady, isLoggedIn, status, callbackUrl, router]);
 
-  // Wait for LIFF to finish initializing before deciding whether we are inside
-  // the LINE client.  Without this guard, isInClient starts as false and
-  // children (which call useLiffRequireSession) render immediately, causing a
-  // redirect to /sign-in before liff.init() has a chance to set isInClient=true.
   if (!isReady) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
@@ -57,13 +52,11 @@ function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
     );
   }
 
-  // Only block while there is no session yet. Session refetch (e.g. refetchOnWindowFocus
-  // in LINE WebView) sets status to "loading" briefly — must not unmount LIFF UI.
   if (status === "unauthenticated") {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">กำลังเข้าสู่ระบบ...</p>
+        <p className="text-sm text-muted-foreground">กำลังเปิดหน้าเข้าสู่ระบบ...</p>
       </div>
     );
   }
@@ -72,7 +65,7 @@ function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-        <p className="text-sm text-muted-foreground">กำลังเข้าสู่ระบบ...</p>
+        <p className="text-sm text-muted-foreground">กำลังโหลด...</p>
       </div>
     );
   }
