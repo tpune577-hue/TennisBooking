@@ -39,6 +39,7 @@ export function LiffBottomNav() {
             <li key={href} className="flex-1 min-w-0">
               <Link
                 href={href}
+                prefetch={false}
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 py-2 min-h-[52px] rounded-lg transition-colors",
                   active

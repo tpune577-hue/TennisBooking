@@ -8,6 +8,7 @@ import { Loader2 } from "lucide-react";
 
 function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
   const { data: session, status } = useSession();
+  const hasUser = Boolean(session?.user);
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const { isInClient, isReady, isLoggedIn, error: liffError } = useLiff();
@@ -67,7 +68,7 @@ function LiffAuthBridgeInner({ children }: { children: ReactNode }) {
     );
   }
 
-  if (status === "loading" && !session?.user) {
+  if (status === "loading" && !hasUser) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[50vh] gap-3 p-8">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
