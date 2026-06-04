@@ -1,7 +1,9 @@
+import "../(marketing)/marketing.css";
+
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <>{children}</>;
+  return <div className="marketing-site">{children}</div>;
 }

@@ -5,9 +5,10 @@ import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SignInCard } from "@/components/auth/sign-in-card";
 import { AuthEntryHub } from "@/components/auth/auth-entry-hub";
+import { LIFF_HOME_CALLBACK } from "@/lib/marketing/member-auth-links";
 import { Loader2 } from "lucide-react";
 
-const DEFAULT_CALLBACK = "/liff/home";
+const DEFAULT_CALLBACK = LIFF_HOME_CALLBACK;
 
 function SignInPageInner() {
   const router = useRouter();
@@ -24,8 +25,8 @@ function SignInPageInner() {
 
   if (status === "loading" || session?.user) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <main className="auth-shell">
+        <Loader2 className="h-8 w-8 animate-spin text-[var(--ink-3)]" />
       </main>
     );
   }
@@ -33,7 +34,7 @@ function SignInPageInner() {
   const signUpHref = `/sign-up?callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-background px-4 py-10">
+    <main className="auth-shell">
       {view === "hub" ? (
         <AuthEntryHub
           signUpHref={signUpHref}
@@ -45,11 +46,7 @@ function SignInPageInner() {
             callbackUrl={callbackUrl}
             errorMessage={error ? decodeURIComponent(error) : null}
           />
-          <button
-            type="button"
-            className="w-full text-sm text-muted-foreground underline"
-            onClick={() => setView("hub")}
-          >
+          <button type="button" className="auth-back" onClick={() => setView("hub")}>
             ← กลับไปเลือกสมัคร / เข้าสู่ระบบ
           </button>
         </div>
@@ -62,8 +59,8 @@ export default function SignInPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen flex items-center justify-center">
-          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        <main className="auth-shell">
+          <Loader2 className="h-8 w-8 animate-spin text-[var(--ink-3)]" />
         </main>
       }
     >

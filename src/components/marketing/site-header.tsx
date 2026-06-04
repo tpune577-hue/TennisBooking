@@ -4,13 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { MEMBER_SIGN_IN_HREF } from "@/lib/marketing/member-auth-links";
 import { Bilingual, useMarketingLang, type MarketingLang } from "./lang";
 
 const NAV = [
   { href: "/", en: "Home", th: "หน้าแรก" },
   { href: "/courts", en: "The Courts", th: "คอร์ต" },
   { href: "/coaches", en: "Coaches", th: "โค้ช" },
-  { href: "/booking", en: "Booking", th: "จองคอร์ต" },
+  { href: MEMBER_SIGN_IN_HREF, en: "Booking", th: "จองคอร์ต" },
   { href: "/contact", en: "Contact", th: "ติดต่อ" },
 ] as const;
 
@@ -88,7 +89,7 @@ export function SiteHeader({ onDark = false }: { onDark?: boolean }) {
                 </button>
               ))}
             </div>
-            <Link className="nav-cta desktop-only" href="/booking">
+            <Link className="nav-cta desktop-only" href={MEMBER_SIGN_IN_HREF}>
               <Bilingual en="Book a court" th="จองคอร์ต" />
             </Link>
           </div>

@@ -4,15 +4,15 @@ import Link from "next/link";
 import { Bilingual } from "@/components/marketing/lang";
 import { Reveal } from "@/components/marketing/reveal";
 import { SiteHeader } from "@/components/marketing/site-header";
+import {
+  MEMBER_SIGN_IN_HREF,
+  MEMBER_SIGN_UP_HREF,
+} from "@/lib/marketing/member-auth-links";
 
 export const metadata: Metadata = {
   title: "Book a Court — Greenwich Tennis Academy",
   description: "Reserve an indoor court at Greenwich Tennis Academy — members sign in to book.",
 };
-
-const BOOK_CALLBACK = "/liff/book";
-const AUTH_HREF = `/sign-in?callbackUrl=${encodeURIComponent(BOOK_CALLBACK)}`;
-const SIGN_UP_HREF = `/sign-up?callbackUrl=${encodeURIComponent(BOOK_CALLBACK)}`;
 
 export default function BookingPage() {
   return (
@@ -40,44 +40,24 @@ export default function BookingPage() {
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="container">
           <Reveal>
-            <div
-              className="booking-card"
-              style={{
-                background: "var(--surface)",
-                border: "1px solid var(--line)",
-                borderRadius: "var(--radius)",
-                padding: "clamp(28px, 4vw, 48px)",
-                boxShadow: "var(--shadow-sm)",
-                maxWidth: 560,
-                margin: "0 auto",
-                textAlign: "center",
-              }}
-            >
-              <p style={{ marginBottom: "1.5rem", color: "var(--ink-2)" }}>
+            <div className="booking-card booking-auth-panel">
+              <p className="muted" style={{ marginBottom: 0 }}>
                 <Bilingual
                   en="Use the same member account on the website and in LINE."
                   th="ใช้บัญชีสมาชิกเดียวกันทั้งบนเว็บและใน LINE"
                 />
               </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                <Link
-                  className="btn btn-primary"
-                  href={AUTH_HREF}
-                  style={{ width: "100%", justifyContent: "center" }}
-                >
+              <div className="booking-auth-actions">
+                <Link className="btn btn-primary" href={MEMBER_SIGN_IN_HREF}>
                   <Bilingual en="Sign in" th="เข้าสู่ระบบ" />
                   <span className="arrow">→</span>
                 </Link>
-                <Link
-                  className="btn btn-ghost"
-                  href={SIGN_UP_HREF}
-                  style={{ width: "100%", justifyContent: "center" }}
-                >
+                <Link className="btn btn-ghost" href={MEMBER_SIGN_UP_HREF}>
                   <Bilingual en="Sign up" th="สมัครสมาชิก" />
                   <span className="arrow">→</span>
                 </Link>
               </div>
-              <p style={{ marginTop: "1.25rem", fontSize: "0.9rem", color: "var(--ink-3)" }}>
+              <p className="muted" style={{ marginTop: "1.25rem", marginBottom: 0, fontSize: "0.9rem" }}>
                 <Bilingual
                   en="LINE · email magic link · phone OTP"
                   th="LINE · ลิงก์อีเมล · OTP เบอร์โทร"

@@ -424,6 +424,41 @@ p { margin: 0 0 1em; color: var(--ink-2); }
 /* ---------- Booking module ---------- */
 .booking { display: grid; grid-template-columns: 1.5fr 1fr; gap: 32px; align-items: start; }
 .booking-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: clamp(24px,3vw,40px); box-shadow: var(--shadow-sm); }
+.booking-auth-panel { max-width: 560px; margin-inline: auto; text-align: center; }
+.booking-auth-actions { display: flex; flex-direction: column; gap: 12px; margin-top: 1.5rem; }
+.booking-auth-actions .btn { width: 100%; justify-content: center; }
+
+/* ---------- Member auth (sign-in / sign-up from marketing) ---------- */
+.auth-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(2rem, 6vw, 3.5rem) var(--gut);
+}
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: clamp(28px, 4vw, 40px);
+  box-shadow: var(--shadow-sm);
+  text-align: center;
+}
+.auth-card .title { font-size: clamp(1.75rem, 3vw, 2.25rem); margin-bottom: 0.5rem; }
+.auth-card .lede { margin-inline: auto; margin-bottom: 0; font-size: 1rem; }
+.auth-card .auth-actions { margin-top: 1.5rem; }
+.auth-back {
+  display: block;
+  width: 100%;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.auth-back:hover { color: var(--oak-deep); }
 .field { margin-bottom: 28px; }
 .field > .field-label { font-size: .74rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--oak-deep); margin-bottom: 12px; display: block; }
 .chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
