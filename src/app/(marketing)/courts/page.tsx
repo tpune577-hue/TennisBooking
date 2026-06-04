@@ -4,7 +4,7 @@ import Link from "next/link";
 import { Bilingual } from "@/components/marketing/lang";
 import { Reveal } from "@/components/marketing/reveal";
 import { SiteHeader } from "@/components/marketing/site-header";
-import { MEMBER_SIGN_IN_HREF } from "@/lib/marketing/member-auth-links";
+import { BookCourtCta } from "@/components/marketing/book-court-cta";
 
 export const metadata: Metadata = {
   title: "The Courts — Greenwich Tennis Academy",
@@ -166,10 +166,10 @@ export default function CourtsPage() {
                   th="พื้นอะคริลิกมาตรฐาน ITF ลูกเด้งและจังหวะสม่ำเสมอ แสงปรับสำหรับการแข่งขันตอนเย็นโดยไม่มีแสงสะท้อนหรือเงาบดบัง"
                 />
               </p>
-              <Link className="btn btn-primary" href={MEMBER_SIGN_IN_HREF} style={{ marginTop: "1.6rem" }}>
+              <BookCourtCta className="btn btn-primary" style={{ marginTop: "1.6rem" }}>
                 <Bilingual en="Book a court" th="จองคอร์ต" />
                 <span className="arrow">→</span>
-              </Link>
+              </BookCourtCta>
             </Reveal>
           </div>
         </div>

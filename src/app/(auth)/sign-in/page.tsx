@@ -1,23 +1,41 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import { useSession } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { SignInCard } from "@/components/auth/sign-in-card";
 import { AuthEntryHub } from "@/components/auth/auth-entry-hub";
-import { LIFF_HOME_CALLBACK } from "@/lib/marketing/member-auth-links";
+import {
+  LIFF_BOOK_CALLBACK,
+  parseAuthErrorParam,
+  parseAuthLang,
+  safeCallbackUrl,
+  type SignInMethod,
+} from "@/lib/marketing/member-auth-links";
 import { Loader2 } from "lucide-react";
 
-const DEFAULT_CALLBACK = LIFF_HOME_CALLBACK;
+const METHODS: SignInMethod[] = ["line", "email", "phone"];
+
+function parseMethod(value: string | null): SignInMethod | null {
+  if (value && METHODS.includes(value as SignInMethod)) {
+    return value as SignInMethod;
+  }
+  return null;
+}
 
 function SignInPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session, status } = useSession();
-  const callbackUrl = searchParams.get("callbackUrl") ?? DEFAULT_CALLBACK;
-  const error = searchParams.get("error");
-  // OAuth errors need the sign-in form (LINE / OTP) with the message visible.
-  const [view, setView] = useState<"hub" | "sign-in">(error ? "sign-in" : "hub");
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
+  const lang = parseAuthLang(searchParams.get("lang"));
+  const errorMessage = parseAuthErrorParam(searchParams.get("error"));
+  const methodFromQuery = useMemo(
+    () => parseMethod(searchParams.get("method")),
+    [searchParams],
+  );
+  const method: SignInMethod | null =
+    methodFromQuery ?? (errorMessage ? "line" : null);
 
   useEffect(() => {
     if (session?.user) router.replace(callbackUrl);
@@ -31,27 +49,29 @@ function SignInPageInner() {
     );
   }
 
-  const signUpHref = `/sign-up?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+  const shellClass = `marketing-site lang-${lang}`;
+
+  if (method) {
+    return (
+      <div className={shellClass}>
+        <main className="auth-shell">
+          <SignInCard
+            method={method}
+            callbackUrl={callbackUrl}
+            errorMessage={errorMessage}
+            lang={lang}
+          />
+        </main>
+      </div>
+    );
+  }
 
   return (
-    <main className="auth-shell">
-      {view === "hub" ? (
-        <AuthEntryHub
-          signUpHref={signUpHref}
-          onSignIn={() => setView("sign-in")}
-        />
-      ) : (
-        <div className="w-full max-w-md space-y-3">
-          <SignInCard
-            callbackUrl={callbackUrl}
-            errorMessage={error ? decodeURIComponent(error) : null}
-          />
-          <button type="button" className="auth-back" onClick={() => setView("hub")}>
-            ← กลับไปเลือกสมัคร / เข้าสู่ระบบ
-          </button>
-        </div>
-      )}
-    </main>
+    <div className={shellClass}>
+      <main className="auth-shell">
+        <AuthEntryHub lang={lang} callbackUrl={callbackUrl} />
+      </main>
+    </div>
   );
 }
 

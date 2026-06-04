@@ -6,18 +6,25 @@ import { signIn } from "next-auth/react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
+import { authText } from "@/lib/auth/member-auth-copy";
+import {
+  buildSignInHref,
+  parseAuthLang,
+  safeCallbackUrl,
+} from "@/lib/marketing/member-auth-links";
 
 function VerifyEmailInner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const lang = parseAuthLang(searchParams.get("lang"));
+  const callbackUrl = safeCallbackUrl(searchParams.get("callbackUrl"));
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const token = searchParams.get("token");
-    const callbackUrl = searchParams.get("callbackUrl") ?? "/dashboard";
 
     if (!token) {
-      setError("ลิงก์ไม่ถูกต้อง");
+      setError(authText(lang, "Invalid link", "ลิงก์ไม่ถูกต้อง"));
       return;
     }
 
@@ -36,28 +43,39 @@ function VerifyEmailInner() {
         return;
       }
 
-      setError("ลิงก์หมดอายุหรือใช้แล้ว กรุณาขอลิงก์ใหม่");
+      setError(
+        authText(
+          lang,
+          "Link expired or already used. Request a new one.",
+          "ลิงก์หมดอายุหรือใช้แล้ว กรุณาขอลิงก์ใหม่",
+        ),
+      );
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [searchParams, router]);
+  }, [searchParams, router, callbackUrl, lang]);
 
   return (
     <Card className="w-full max-w-sm">
       <CardHeader className="text-center">
-        <CardTitle className="text-xl">ยืนยันอีเมล</CardTitle>
+        <CardTitle className="text-xl">
+          {authText(lang, "Confirm email", "ยืนยันอีเมล")}
+        </CardTitle>
         <CardDescription>
-          {error ? error : "กำลังเข้าสู่ระบบ..."}
+          {error ? error : authText(lang, "Signing you in…", "กำลังเข้าสู่ระบบ...")}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col items-center gap-4">
         {!error ? (
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         ) : (
-          <Link href="/sign-in" className="text-sm text-primary underline underline-offset-4">
-            กลับไปหน้าเข้าสู่ระบบ
+          <Link
+            href={buildSignInHref({ method: "email", callbackUrl, lang })}
+            className="text-sm text-primary underline underline-offset-4"
+          >
+            {authText(lang, "Back to sign in", "กลับไปหน้าเข้าสู่ระบบ")}
           </Link>
         )}
       </CardContent>

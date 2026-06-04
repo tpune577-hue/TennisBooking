@@ -5,7 +5,7 @@ import { Bilingual } from "@/components/marketing/lang";
 import { FaqSection, type FaqItem } from "@/components/marketing/faq";
 import { Reveal } from "@/components/marketing/reveal";
 import { SiteHeader } from "@/components/marketing/site-header";
-import { MEMBER_SIGN_IN_HREF } from "@/lib/marketing/member-auth-links";
+import { BookCourtCta } from "@/components/marketing/book-court-cta";
 
 export const metadata: Metadata = {
   title: "Greenwich Tennis Academy — A private home for the game",
@@ -113,10 +113,10 @@ export default function MarketingHomePage() {
                   />
                 </p>
                 <div className="hero-cta">
-                  <Link className="btn btn-primary" href={MEMBER_SIGN_IN_HREF}>
+                  <BookCourtCta className="btn btn-primary">
                     <Bilingual en="Book a court" th="จองคอร์ต" />
                     <span className="arrow">→</span>
-                  </Link>
+                  </BookCourtCta>
                   <Link className="btn btn-outline-light" href="/courts">
                     <Bilingual en="Explore the academy" th="ชมอะคาเดมี" />
                   </Link>
@@ -391,10 +391,10 @@ export default function MarketingHomePage() {
                   />
                 </p>
                 <div className="hero-cta">
-                  <Link className="btn btn-light" href={MEMBER_SIGN_IN_HREF}>
+                  <BookCourtCta className="btn btn-light">
                     <Bilingual en="Book a court" th="จองคอร์ต" />
                     <span className="arrow">→</span>
-                  </Link>
+                  </BookCourtCta>
                   <Link className="btn btn-outline-light" href="/contact">
                     <Bilingual en="Contact the club" th="ติดต่อสโมสร" />
                   </Link>

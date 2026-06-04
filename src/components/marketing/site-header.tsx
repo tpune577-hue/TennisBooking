@@ -4,14 +4,14 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { MEMBER_SIGN_IN_HREF } from "@/lib/marketing/member-auth-links";
+import { BookCourtCta } from "@/components/marketing/book-court-cta";
 import { Bilingual, useMarketingLang, type MarketingLang } from "./lang";
 
 const NAV = [
   { href: "/", en: "Home", th: "หน้าแรก" },
   { href: "/courts", en: "The Courts", th: "คอร์ต" },
   { href: "/coaches", en: "Coaches", th: "โค้ช" },
-  { href: MEMBER_SIGN_IN_HREF, en: "Booking", th: "จองคอร์ต" },
+  { href: "/booking", en: "Booking", th: "จองคอร์ต" },
   { href: "/contact", en: "Contact", th: "ติดต่อ" },
 ] as const;
 
@@ -89,9 +89,9 @@ export function SiteHeader({ onDark = false }: { onDark?: boolean }) {
                 </button>
               ))}
             </div>
-            <Link className="nav-cta desktop-only" href={MEMBER_SIGN_IN_HREF}>
+            <BookCourtCta className="nav-cta desktop-only">
               <Bilingual en="Book a court" th="จองคอร์ต" />
-            </Link>
+            </BookCourtCta>
           </div>
           <button
             className="nav-toggle"
@@ -120,6 +120,12 @@ export function SiteHeader({ onDark = false }: { onDark?: boolean }) {
             <Bilingual en={item.en} th={item.th} />
           </Link>
         ))}
+        <BookCourtCta
+          className="btn btn-primary"
+          onActivate={() => setMenuOpen(false)}
+        >
+          <Bilingual en="Book a court" th="จองคอร์ต" />
+        </BookCourtCta>
       </div>
     </>
   );

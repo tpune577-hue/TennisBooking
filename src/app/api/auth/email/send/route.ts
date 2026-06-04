@@ -5,6 +5,7 @@ import { VerificationError, createEmailMagicLink } from "@/lib/auth/verification
 const bodySchema = z.object({
   email: z.string().email(),
   callbackUrl: z.string().optional(),
+  lang: z.enum(["en", "th"]).optional(),
 });
 
 export async function POST(req: Request) {
@@ -15,7 +16,10 @@ export async function POST(req: Request) {
 
   try {
     const { email, token } = await createEmailMagicLink(parsed.data.email);
-    const url = buildEmailSignInUrl(token, parsed.data.callbackUrl);
+    const url = buildEmailSignInUrl(token, {
+      callbackUrl: parsed.data.callbackUrl,
+      lang: parsed.data.lang,
+    });
     await sendMagicLinkEmail(email, url);
     return Response.json({ ok: true });
   } catch (err) {

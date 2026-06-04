@@ -1,8 +1,17 @@
-export function buildEmailSignInUrl(token: string, callbackUrl?: string): string {
+import {
+  safeCallbackUrl,
+  type AuthLang,
+} from "@/lib/marketing/member-auth-links";
+
+export function buildEmailSignInUrl(
+  token: string,
+  options?: { callbackUrl?: string; lang?: AuthLang },
+): string {
   const base = process.env.AUTH_URL ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
   const url = new URL("/sign-in/verify-email", base);
   url.searchParams.set("token", token);
-  if (callbackUrl) url.searchParams.set("callbackUrl", callbackUrl);
+  url.searchParams.set("callbackUrl", safeCallbackUrl(options?.callbackUrl));
+  if (options?.lang) url.searchParams.set("lang", options.lang);
   return url.toString();
 }
 

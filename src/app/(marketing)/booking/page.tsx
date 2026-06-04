@@ -4,10 +4,7 @@ import Link from "next/link";
 import { Bilingual } from "@/components/marketing/lang";
 import { Reveal } from "@/components/marketing/reveal";
 import { SiteHeader } from "@/components/marketing/site-header";
-import {
-  MEMBER_SIGN_IN_HREF,
-  MEMBER_SIGN_UP_HREF,
-} from "@/lib/marketing/member-auth-links";
+import { BookingPageAuthPanel } from "@/components/marketing/booking-page-auth-panel";
 
 export const metadata: Metadata = {
   title: "Book a Court — Greenwich Tennis Academy",
@@ -40,30 +37,7 @@ export default function BookingPage() {
       <section className="section" style={{ paddingTop: 0 }}>
         <div className="container">
           <Reveal>
-            <div className="booking-card booking-auth-panel">
-              <p className="muted" style={{ marginBottom: 0 }}>
-                <Bilingual
-                  en="Use the same member account on the website and in LINE."
-                  th="ใช้บัญชีสมาชิกเดียวกันทั้งบนเว็บและใน LINE"
-                />
-              </p>
-              <div className="booking-auth-actions">
-                <Link className="btn btn-primary" href={MEMBER_SIGN_IN_HREF}>
-                  <Bilingual en="Sign in" th="เข้าสู่ระบบ" />
-                  <span className="arrow">→</span>
-                </Link>
-                <Link className="btn btn-ghost" href={MEMBER_SIGN_UP_HREF}>
-                  <Bilingual en="Sign up" th="สมัครสมาชิก" />
-                  <span className="arrow">→</span>
-                </Link>
-              </div>
-              <p className="muted" style={{ marginTop: "1.25rem", marginBottom: 0, fontSize: "0.9rem" }}>
-                <Bilingual
-                  en="LINE · email magic link · phone OTP"
-                  th="LINE · ลิงก์อีเมล · OTP เบอร์โทร"
-                />
-              </p>
-            </div>
+            <BookingPageAuthPanel />
           </Reveal>
         </div>
       </section>

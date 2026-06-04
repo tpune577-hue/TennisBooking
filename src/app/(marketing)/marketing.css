@@ -459,6 +459,33 @@ p { margin: 0 0 1em; color: var(--ink-2); }
   text-underline-offset: 3px;
 }
 .auth-back:hover { color: var(--oak-deep); }
+
+.auth-method-heading {
+  margin: 1.5rem 0 0.75rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--oak-deep);
+}
+.auth-method-block .auth-method-heading { margin-top: 0; }
+.auth-method-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.auth-method-list--modal { margin-top: 0.5rem; }
+.btn-line {
+  background: #06c755;
+  border-color: #06c755;
+  color: #fff;
+}
+.btn-line:hover {
+  background: #05b04c;
+  border-color: #05b04c;
+  color: #fff;
+}
+.booking-auth-dialog .booking-auth-actions { margin-top: 0.5rem; }
 .field { margin-bottom: 28px; }
 .field > .field-label { font-size: .74rem; font-weight: 600; letter-spacing: .18em; text-transform: uppercase; color: var(--oak-deep); margin-bottom: 12px; display: block; }
 .chip-row { display: flex; flex-wrap: wrap; gap: 10px; }
