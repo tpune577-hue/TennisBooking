@@ -1,6 +1,7 @@
 import { getDb, schema } from "@/db";
 import { eq, lte, gt, and } from "drizzle-orm";
 import { notifyCreditExpiringSoon } from "@/lib/notifications/line";
+import { expireDueDealOffers } from "@/lib/deals/expire-offers";
 
 export const dynamic = "force-dynamic";
 
@@ -88,16 +89,19 @@ export async function GET(req: Request) {
       });
     }
 
+    const expiredDeals = await expireDueDealOffers(now);
+
     console.log(JSON.stringify({
       level: "info",
       msg: "done",
       route: "GET /api/cron/expire-credits",
       expired: expiredCount,
       notified: notified.size,
+      expiredDeals,
       ms: Date.now() - start,
     }));
 
-    return Response.json({ ok: true, expired: expiredCount, notified: notified.size });
+    return Response.json({ ok: true, expired: expiredCount, notified: notified.size, expiredDeals });
   } catch (err) {
     console.error(JSON.stringify({ level: "error", msg: "cron_failed", error: String(err), ms: Date.now() - start }));
     return Response.json({ error: "Internal server error" }, { status: 500 });

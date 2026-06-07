@@ -6,11 +6,16 @@ import { createPromptPaySource, createCharge, CREDIT_PACKAGES } from "@/lib/omis
 
 export const dynamic = "force-dynamic";
 
-const createPaymentSchema = z.object({
-  packageIndex: z.number().int().min(0).max(3),
-  method: z.enum(["promptpay", "credit_card"]),
-  cardToken: z.string().optional(),
-});
+const createPaymentSchema = z
+  .object({
+    packageIndex: z.number().int().min(0).max(3).optional(),
+    dealOfferId: z.string().uuid().optional(),
+    method: z.enum(["promptpay", "credit_card"]),
+    cardToken: z.string().optional(),
+  })
+  .refine((d) => (d.packageIndex !== undefined) !== (d.dealOfferId !== undefined), {
+    message: "ระบุ packageIndex หรือ dealOfferId อย่างใดอย่างหนึ่ง",
+  });
 
 export async function POST(req: Request) {
   const start = Date.now();
@@ -24,23 +29,53 @@ export async function POST(req: Request) {
     const parsed = createPaymentSchema.safeParse(body);
     if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
-    const { packageIndex, method, cardToken } = parsed.data;
-    const pkg = CREDIT_PACKAGES[packageIndex];
-    if (!pkg) return Response.json({ error: "Invalid package" }, { status: 400 });
-
-    const amountSatang = pkg.thb * 100;
+    const { packageIndex, dealOfferId, method, cardToken } = parsed.data;
     const db = getDb();
 
-    // Insert pending payment
+    let amountSatang: number;
+    let creditAmount: number;
+    let description: string;
+    let paymentDealOfferId: string | undefined;
+
+    if (dealOfferId) {
+      const offer = await db.query.dealOffers.findFirst({
+        where: eq(schema.dealOffers.id, dealOfferId),
+      });
+      if (!offer || offer.userId !== userId) {
+        return Response.json({ error: "ไม่พบ Deal" }, { status: 404 });
+      }
+      if (offer.status !== "non_paid") {
+        return Response.json({ error: "Deal นี้ไม่สามารถชำระเงินได้" }, { status: 400 });
+      }
+      if (offer.expiresAt <= new Date()) {
+        await db
+          .update(schema.dealOffers)
+          .set({ status: "expired" })
+          .where(eq(schema.dealOffers.id, dealOfferId));
+        return Response.json({ error: "Deal หมดอายุแล้ว" }, { status: 400 });
+      }
+      amountSatang = offer.priceThb * 100;
+      creditAmount = offer.creditAmount;
+      description = `Deal เติมเครดิต ${offer.creditAmount} เครดิต (${offer.priceThb.toLocaleString()} บาท)`;
+      paymentDealOfferId = offer.id;
+    } else {
+      const pkg = CREDIT_PACKAGES[packageIndex!];
+      if (!pkg) return Response.json({ error: "Invalid package" }, { status: 400 });
+      amountSatang = pkg.thb * 100;
+      creditAmount = pkg.credits;
+      description = `เติมเครดิต ${pkg.credits} เครดิต (${pkg.label})`;
+    }
+
     const [payment] = await db
       .insert(schema.payments)
       .values({
         userId,
         amount: amountSatang,
-        creditAmount: pkg.credits,
+        creditAmount,
         status: "pending",
         method,
-        description: `เติมเครดิต ${pkg.credits} เครดิต (${pkg.label})`,
+        description,
+        dealOfferId: paymentDealOfferId,
       })
       .returning();
 
@@ -51,7 +86,7 @@ export async function POST(req: Request) {
       chargeResult = await createCharge({
         amount: amountSatang,
         sourceId: source.id,
-        description: `Tennis Club — ${pkg.label} (${pkg.credits} credits)`,
+        description: `Tennis Club — ${description}`,
         metadata: { paymentId: payment.id, userId },
       });
     } else {
@@ -59,7 +94,7 @@ export async function POST(req: Request) {
       chargeResult = await createCharge({
         amount: amountSatang,
         cardToken,
-        description: `Tennis Club — ${pkg.label} (${pkg.credits} credits)`,
+        description: `Tennis Club — ${description}`,
         metadata: { paymentId: payment.id, userId },
       });
     }
@@ -72,7 +107,7 @@ export async function POST(req: Request) {
 
     // For card payments that succeed immediately
     if (method === "credit_card" && chargeResult.status === "successful") {
-      await fulfillPayment(db, payment.id, userId, pkg.credits);
+      await fulfillPayment(db, payment.id, userId, creditAmount);
     }
 
     return Response.json({
@@ -147,4 +182,21 @@ export async function fulfillPayment(
     expiresAt,
     paymentId,
   });
+
+  const [payment] = await db
+    .select({ dealOfferId: schema.payments.dealOfferId })
+    .from(schema.payments)
+    .where(eq(schema.payments.id, paymentId));
+
+  if (payment?.dealOfferId) {
+    await db
+      .update(schema.dealOffers)
+      .set({ status: "paid", paidAt: now })
+      .where(
+        and(
+          eq(schema.dealOffers.id, payment.dealOfferId),
+          eq(schema.dealOffers.status, "non_paid")
+        )
+      );
+  }
 }

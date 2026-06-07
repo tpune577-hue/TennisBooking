@@ -9,6 +9,7 @@ import {
 import { relations } from "drizzle-orm";
 import { paymentStatusEnum, paymentMethodEnum } from "./enums";
 import { users } from "./users";
+import { dealOffers } from "./deal-offers";
 
 export const payments = pgTable("payments", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -22,6 +23,7 @@ export const payments = pgTable("payments", {
   omiseChargeId: varchar("omise_charge_id", { length: 255 }).unique(),
   omiseSourceId: varchar("omise_source_id", { length: 255 }),
   description: text("description"),
+  dealOfferId: uuid("deal_offer_id").references(() => dealOffers.id),
   paidAt: timestamp("paid_at"),
   failedAt: timestamp("failed_at"),
   failureMessage: text("failure_message"),
@@ -31,4 +33,8 @@ export const payments = pgTable("payments", {
 
 export const paymentsRelations = relations(payments, ({ one }) => ({
   user: one(users, { fields: [payments.userId], references: [users.id] }),
+  dealOffer: one(dealOffers, {
+    fields: [payments.dealOfferId],
+    references: [dealOffers.id],
+  }),
 }));

@@ -61,6 +61,10 @@ _Avoid_: Package (when you mean tier), Plan, Level
 A sellable club product that grants tier benefits for a duration (database schema exists). Not offered through the product flows yet — planned.
 _Avoid_: Package alone, Top-up package, Subscription
 
+**Deal**:
+A one-time staff-created credit top-up offer for a specific member — custom price and credit amount, sent via LINE and/or email, payable through Omise until the offer expires.
+_Avoid_: Package (when you mean fixed top-up bundle), Promotion (too vague)
+
 ## Booking
 
 **Booking**:

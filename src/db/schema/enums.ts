@@ -67,3 +67,10 @@ export const memberPackageStatusEnum = pgEnum("member_package_status", [
 ]);
 
 export const accessPassRoleEnum = pgEnum("access_pass_role", ["host", "guest", "coach"]);
+
+export const dealOfferStatusEnum = pgEnum("deal_offer_status", [
+  "non_paid",
+  "paid",
+  "expired",
+  "cancelled",
+]);

@@ -9,6 +9,7 @@ import {
   Users,
   Trophy,
   Package,
+  Tag,
   UserCheck,
   Wallet,
   Settings,
@@ -59,6 +60,12 @@ const navItems: NavItem[] = [
     href: "/admin/members",
     label: "สมาชิก",
     icon: Users,
+    roles: ["staff", "super_admin"],
+  },
+  {
+    href: "/admin/deals",
+    label: "Deal",
+    icon: Tag,
     roles: ["staff", "super_admin"],
   },
   {

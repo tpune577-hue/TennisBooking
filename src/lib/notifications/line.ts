@@ -81,6 +81,11 @@ function liffTopupUri(): string {
   return appUri("/liff/topup");
 }
 
+export function liffDealUri(offerId: string, action?: "pay"): string {
+  const path = `/liff/deals/${offerId}${action === "pay" ? "?action=pay" : ""}`;
+  return appUri(path);
+}
+
 export function liffBookingAccessUri(bookingId: string): string {
   return appUri(`/liff/access?bookingId=${bookingId}`);
 }
@@ -345,6 +350,55 @@ export async function notifyCreditExpiringSoon(opts: {
       flexRow("หมดอายุ", opts.expiresAt),
     ]),
     footer: flexFooterButton("เติมเครดิต", liffTopupUri()),
+  });
+}
+
+export async function notifyDealOffer(opts: {
+  lineUserId: string;
+  offerId: string;
+  priceThb: number;
+  creditAmount: number;
+  bonusLabel: string;
+  expiresAt: string;
+}): Promise<LinePushResult> {
+  const altText = "ข้อเสนอเติมเครดิตพิเศษ";
+  return pushFlex(opts.lineUserId, altText, {
+    type: "bubble",
+    header: flexHeader("🎾 ข้อเสนอเติมเครดิตพิเศษ", COLORS.success),
+    body: flexBody([
+      flexRow("ราคา", `${opts.priceThb.toLocaleString()} บาท`),
+      flexRow("เครดิต", `${opts.creditAmount.toLocaleString()} เครดิต`),
+      flexRow("โบนัส", opts.bonusLabel),
+      flexRow("หมดอายุ", opts.expiresAt),
+    ]),
+    footer: {
+      type: "box",
+      layout: "vertical",
+      spacing: "sm",
+      contents: [
+        {
+          type: "button",
+          style: "primary",
+          color: COLORS.success,
+          action: {
+            type: "uri",
+            label: "ดูรายละเอียด",
+            uri: liffDealUri(opts.offerId),
+          },
+        },
+        {
+          type: "button",
+          style: "primary",
+          color: COLORS.warning,
+          action: {
+            type: "uri",
+            label: "ชำระเงิน",
+            uri: liffDealUri(opts.offerId, "pay"),
+          },
+        },
+      ],
+      paddingAll: "12px",
+    },
   });
 }
 
