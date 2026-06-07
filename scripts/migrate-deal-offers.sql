@@ -1,5 +1,5 @@
--- Deal offers: run in Neon SQL Editor or:
--- DATABASE_URL=... node scripts/run-sql-file.mjs scripts/migrate-deal-offers.sql
+-- Deal offers: prefer npm run db:migrate-deal-offers (WebSocket driver).
+-- Or paste into Neon SQL Editor:
 
 DO $$ BEGIN
   CREATE TYPE deal_offer_status AS ENUM ('non_paid', 'paid', 'expired', 'cancelled');
